@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ripple examples</title>
+    <style>
+      .ripbtn__basic01 {
+        position: relative;
+        /* 버튼 안에서의 effect가 버튼을 벗어났을때 가리기 위함 */
+        overflow: hidden;
+        padding: 12px 24px;
+        background-color: #5adbb5;
+        color: white;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+      }
+
+      /* ripple 모양 */
+      .ripbtn__basic01-ani {
+        /* 포지션 */
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+
+        /* 모양 */
+        content: ' ';
+        width: 0px;
+        height: 0px;
+        opacity: 0;
+        background-color: rgba(255, 255, 255, 0.6);
+        border-radius: 50%;
+
+        /* 상태 */
+        pointer-events: none;
+        animation: ripple-basic01 0.4s linear;
+      }
+
+      @keyframes ripple-basic01 {
+        0% {
+          width: 0px;
+          height: 0px;
+          transform: translate(-50%, -50%) scale(0);
+          opacity: 0;
+        }
+        100% {
+          width: 100px;
+          height: 100px;
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <button class="ripbtn__basic01">Click Me!!</button>
+  </body>
+  <script>
+    const ripbtnBasic01 = document.querySelector('.ripbtn__basic01');
+
+    ripbtnBasic01.addEventListener('click', e => {
+      // ripple 생성 및 클래스 부여
+      let ripple = document.createElement('span');
+      ripple.classList.add('ripbtn__basic01-ani');
+
+      // 버튼 내에 마우스 클릭한 좌표 구하기
+      let buttonRect = ripbtnBasic01.getBoundingClientRect();
+      let rippleX = e.clientX - buttonRect.left;
+      let rippleY = e.clientY - buttonRect.top;
+
+      // 클릭한 좌표를 ripple에 적용시키기
+      ripple.style.left = `${rippleX}px`;
+      ripple.style.top = `${rippleY}px`;
+
+      // HTML에 반영
+      ripbtnBasic01.appendChild(ripple);
+
+      // Animation이 끝나고 난 후 ripple 삭제
+      setTimeout(() => {
+        ripple.remove();
+      }, 400);
+    });
+  </script>
+</html>
