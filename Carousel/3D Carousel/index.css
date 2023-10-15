@@ -1,4 +1,4 @@
-/* https://codepen.io/ykadosh/pen/ZEJLapj?editors=0110 */
+/* https://codepen.io/chingy/pen/yLLZRbj */
 
 /* Reset CSS */
 * {
@@ -11,6 +11,7 @@ body {
   padding: 0;
   font-size: 62.5%;
   line-height: 1.285;
+  background-color: black;
 }
 
 ul {
@@ -50,11 +51,16 @@ ul {
   /* 3D Preserve */
   transform-style: preserve-3d;
   perspective: 1100px;
+
+  /* Transform for moving card card */
+  transform: translate3d();
+  transition: transform 0.3s ease;
 }
 
 /* 3D Effect */
 .cardContainer {
   position: relative;
+  transition: transform 0.3s ease;
 }
 .cardContainer.left {
   transform: translateZ(-100px) rotateY(70deg);
