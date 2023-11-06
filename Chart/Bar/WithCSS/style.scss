@@ -1,0 +1,46 @@
+// npx sass --watch ./style.scss style.css
+dl {
+  position: relative;
+  max-width: 90vw;
+}
+
+dt {
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.percentage:after {
+  content: '';
+  display: block;
+  width: 100px;
+  height: 90%;
+  background-color: #3d9970;
+}
+
+@for $i from 1 through 100 {
+  .percentage-#{$i}:after {
+    $value: $i * 1%;
+    width: $value;
+  }
+}
+
+.percentage {
+  margin-left: 100px;
+  height: 80px;
+  background: repeating-linear-gradient(
+    to right,
+    #ddd,
+    #ddd 1px,
+    #fff 1px,
+    #fff 5%
+  );
+}
+
+.text {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  height: 80px;
+}
