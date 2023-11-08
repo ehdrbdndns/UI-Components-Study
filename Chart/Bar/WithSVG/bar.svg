@@ -1,0 +1,51 @@
+<svg width="500" height="auto" class="chart" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .bar {
+      fill: #aaa;
+      cursor: pointer;
+      transition: fill .3s ease;
+    }
+
+    .bar > text {
+      fill: #555
+    }
+
+    .bar:hover, .bar:focus {
+      fill: red;
+    }
+
+    .bar:hover > text, .bar:focus > text {
+      fill: red;
+    }
+  </style>
+  <g class="bar">
+    <rect width="45" height="19" />
+    <text x="45" y="13" dx=".25em">
+      Bar Chart 1
+    </text>
+  </g>
+  <g class="bar">
+    <rect width="80" height="19" y="30" />
+    <text x="80" y="43" dx=".25em">
+      Bar Chart 2
+    </text>
+  </g>
+  <g class="bar">
+    <rect width="160" height="19" y="60" />
+    <text x="160" y="73" dx=".25em">
+      Bar Chart 3
+    </text>
+  </g>
+  <g class="bar">
+    <rect width="240" height="19" y="90" />
+    <text x="240" y="103" dx=".25em">
+      Bar Chart 4
+    </text>
+  </g>
+  <g class="bar">
+    <rect width="260" height="19" y="120" />
+    <text x="260" y="133" dx=".25em">
+      Bar Chart 5
+    </text>
+  </g>
+</svg>
