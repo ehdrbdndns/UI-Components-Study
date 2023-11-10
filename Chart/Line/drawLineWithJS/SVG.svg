@@ -1,0 +1,9 @@
+<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" class="chart">
+  <g class="axios">
+    <line class="x-axios" x1="50" x2="950" y1="950" y2="950" stroke="black" fill="black"></line>
+    <line class="x-axios" x1="50" x2="50" y1="50" y2="950" stroke="black" fill="black"></line>
+  </g>
+  <g class="label"></g>
+  <g class="points"></g>
+  <g class="polyline"></g>
+</svg>
