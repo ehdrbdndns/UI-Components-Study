@@ -6,6 +6,7 @@ interface ChartType {
     font: number;
   };
   datas: ChartDataType[];
+  labels: string[];
 }
 
 interface ChartDataType {
@@ -35,11 +36,12 @@ class Chart {
   private padding: ChartPaddingType = { x: 0, y: 0 };
 
   private datas: ChartDataType[];
-  private xAxisCount: number;
-  private maxData: number = 0;
+  private labels: string[]; // x축에서 표현되는 라벨 들
+  private xAxisCount: number; // x축에서 표현되는 라벨의 개수
+  private maxData: number = 0; // y축에서 표현되는 가장 큰 수
 
   constructor(data: ChartType) {
-    const { datas, size, targetId } = data;
+    const { datas, size, targetId, labels } = data;
     this.chart = document.createElementNS(this.svgNs, 'svg') as SvgInHtml;
 
     this.targetId = targetId;
@@ -48,10 +50,9 @@ class Chart {
     this.fontSize = size.font;
 
     this.datas = datas;
-    this.xAxisCount = datas[0].data.length;
-    datas.map((data) => {
-      data.max > this.maxData ? (this.maxData = data.max) : null;
-    });
+    this.labels = labels;
+    this.xAxisCount = labels.length;
+    this.maxData = Math.max(...datas.map((data) => data.max));
   }
 
   private setSVGPadding = () => {
@@ -115,14 +116,42 @@ class Chart {
     this.setAxis();
   };
 
-  private setLabel = () => {};
+  private setPoints = () => {
+    let pointList = [];
+    // for each label
+    for (let i = 0; i < this.datas.length; i++) {
+      let newPoints = '';
+      for (let j = 0; j < this.datas[i].data.length; j++) {
+        // x label position
+        let x = this.padding.y + (j + 1) / this.xAxisCount;
+        // y label position
+        let y =
+          (this.hegiht - this.padding.x) *
+          (this.datas[i].data[j] / this.maxData);
 
-  private setData = () => {};
+        newPoints += `${x} ${y} `;
+      }
+      pointList.push(newPoints);
+    }
+
+    // make g container
+    let points = document.createElementNS(this.svgNs, 'g');
+
+    // draw polylines
+    for (let i = 0; i < pointList.length; i++) {}
+  };
+
+  private setLabel = () => {};
 
   // rendering for chart
   public render = () => {
+    // 컨테이너 크기 및 Axios 구축
     this.setContainer();
 
+    // 데이터 구축
+    this.setPoints();
+
+    // 데이터 라벨링
     document.getElementById(this.targetId)?.appendChild(this.chart);
   };
 }

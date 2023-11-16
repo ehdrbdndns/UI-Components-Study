@@ -14,7 +14,7 @@ var Chart = /** @class */ (function () {
         var _this = this;
         this.svgNs = 'http://www.w3.org/2000/svg';
         this.padding = { x: 0, y: 0 };
-        this.maxData = 0;
+        this.maxData = 0; // y축에서 표현되는 가장 큰 수
         this.setSVGPadding = function () {
             // 1. Y-Padding
             // find max y-label length
@@ -62,25 +62,47 @@ var Chart = /** @class */ (function () {
             // 3. Draw X and Y Axis
             _this.setAxis();
         };
+        this.setPoints = function () {
+            var pointList = [];
+            // for each label
+            for (var i = 0; i < _this.datas.length; i++) {
+                var newPoints = '';
+                for (var j = 0; j < _this.datas[i].data.length; j++) {
+                    // x label position
+                    var x = _this.padding.y + (j + 1) / _this.xAxisCount;
+                    // y label position
+                    var y = (_this.hegiht - _this.padding.x) *
+                        (_this.datas[i].data[j] / _this.maxData);
+                    newPoints += "".concat(x, " ").concat(y, " ");
+                }
+                pointList.push(newPoints);
+            }
+            // make g container
+            var points = document.createElementNS(_this.svgNs, 'g');
+            // draw polylines
+            for (var i = 0; i < pointList.length; i++) { }
+        };
         this.setLabel = function () { };
-        this.setData = function () { };
         // rendering for chart
         this.render = function () {
             var _a;
+            // 컨테이너 크기 및 Axios 구축
             _this.setContainer();
+            // 데이터 구축
+            _this.setPoints();
+            // 데이터 라벨링
             (_a = document.getElementById(_this.targetId)) === null || _a === void 0 ? void 0 : _a.appendChild(_this.chart);
         };
-        var datas = data.datas, size = data.size, targetId = data.targetId;
+        var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels;
         this.chart = document.createElementNS(this.svgNs, 'svg');
         this.targetId = targetId;
         this.width = size.width;
         this.hegiht = size.height;
         this.fontSize = size.font;
         this.datas = datas;
-        this.xAxisCount = datas[0].data.length;
-        datas.map(function (data) {
-            data.max > _this.maxData ? (_this.maxData = data.max) : null;
-        });
+        this.labels = labels;
+        this.xAxisCount = labels.length;
+        this.maxData = Math.max.apply(Math, datas.map(function (data) { return data.max; }));
     }
     return Chart;
 }());
