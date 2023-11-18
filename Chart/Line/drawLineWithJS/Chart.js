@@ -63,24 +63,26 @@ var Chart = /** @class */ (function () {
             _this.setAxis();
         };
         this.setPoints = function () {
-            var pointList = [];
-            // for each label
-            for (var i = 0; i < _this.datas.length; i++) {
-                var newPoints = '';
-                for (var j = 0; j < _this.datas[i].data.length; j++) {
-                    // x label position
-                    var x = _this.padding.y + (j + 1) / _this.xAxisCount;
-                    // y label position
-                    var y = (_this.hegiht - _this.padding.x) *
-                        (_this.datas[i].data[j] / _this.maxData);
-                    newPoints += "".concat(x, " ").concat(y, " ");
-                }
-                pointList.push(newPoints);
-            }
             // make g container
-            var points = document.createElementNS(_this.svgNs, 'g');
-            // draw polylines
-            for (var i = 0; i < pointList.length; i++) { }
+            var gTagOfPolyLine = document.createElementNS(_this.svgNs, 'g');
+            gTagOfPolyLine.classList.add('datas');
+            for (var i = 0; i < _this.datas.length; i++) {
+                var points = _this.datas[i].data
+                    .map(function (value, j) {
+                    var x = ((j + 1) / _this.xAxisCount) * (_this.width - _this.padding.y);
+                    var y = (_this.hegiht - _this.padding.x) * (value / _this.maxData);
+                    return "".concat(x, ",").concat(y);
+                })
+                    .join(' ');
+                // draw polylines
+                var polyLine = document.createElementNS(_this.svgNs, 'polyline');
+                polyLine.setAttribute('points', points);
+                polyLine.setAttribute('stroke', _this.datas[i].color);
+                polyLine.setAttribute('fill', 'none');
+                polyLine.setAttribute('stroke-width', _this.datas[i].weight + '');
+                gTagOfPolyLine.appendChild(polyLine);
+            }
+            _this.chart.appendChild(gTagOfPolyLine);
         };
         this.setLabel = function () { };
         // rendering for chart

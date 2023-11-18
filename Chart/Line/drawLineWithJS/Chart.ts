@@ -10,10 +10,18 @@ interface ChartType {
 }
 
 interface ChartDataType {
+  // 데이터들의 라벨
   label: string;
+  // 데이터 리스트
   data: number[];
+  // 데이터들의 최소 값
   min: number;
+  // 데이터들의 최대 값
   max: number;
+  // 차트 라인의 색깔
+  color: string;
+  // 차트 라인의 두께
+  weight: number;
 }
 
 interface ChartPaddingType {
@@ -117,28 +125,31 @@ class Chart {
   };
 
   private setPoints = () => {
-    let pointList = [];
-    // for each label
-    for (let i = 0; i < this.datas.length; i++) {
-      let newPoints = '';
-      for (let j = 0; j < this.datas[i].data.length; j++) {
-        // x label position
-        let x = this.padding.y + (j + 1) / this.xAxisCount;
-        // y label position
-        let y =
-          (this.hegiht - this.padding.x) *
-          (this.datas[i].data[j] / this.maxData);
+    // make g container
+    let gTagOfPolyLine = document.createElementNS(this.svgNs, 'g');
+    gTagOfPolyLine.classList.add('datas');
 
-        newPoints += `${x} ${y} `;
-      }
-      pointList.push(newPoints);
+    for (let i = 0; i < this.datas.length; i++) {
+      let points = this.datas[i].data
+        .map((value, j) => {
+          let x = ((j + 1) / this.xAxisCount) * (this.width - this.padding.y);
+          let y = (this.hegiht - this.padding.x) * (value / this.maxData);
+
+          return `${x},${y}`;
+        })
+        .join(' ');
+
+      // draw polylines
+      const polyLine = document.createElementNS(this.svgNs, 'polyline');
+      polyLine.setAttribute('points', points);
+      polyLine.setAttribute('stroke', this.datas[i].color);
+      polyLine.setAttribute('fill', 'none');
+      polyLine.setAttribute('stroke-width', this.datas[i].weight + '');
+
+      gTagOfPolyLine.appendChild(polyLine);
     }
 
-    // make g container
-    let points = document.createElementNS(this.svgNs, 'g');
-
-    // draw polylines
-    for (let i = 0; i < pointList.length; i++) {}
+    this.chart.appendChild(gTagOfPolyLine);
   };
 
   private setLabel = () => {};
