@@ -18,67 +18,57 @@
     </style>
   </head>
   <body>
-    <div id="chart" class="container">
-      <!-- <svg
-        viewBox="0 0 1000 1000"
-        xmlns="http://www.w3.org/2000/svg"
-        class="chart"
-      >
-        <g class="axios"></g>
-        <g class="label"></g>
-        <g class="points"></g>
-        <g class="polyline"></g>
-      </svg> -->
-    </div>
+    <div id="chart" class="container"></div>
   </body>
   <script src="./Chart.js"></script>
   <script>
+    let testMax = 50000000;
+    let testMin = 0;
     const testDataList = [
       {
         label: 'Test1',
         color: '#fff',
-        weight: 7,
+        weight: 10,
         data: [
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
+          testMin,
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          testMax,
         ],
-        min: 0,
-        max: 100,
+        min: testMin,
+        max: testMax,
       },
       {
         label: 'Test2',
         color: '#fff',
         weight: 3,
         data: [
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
-          Math.floor(Math.random() * 101),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
         ],
-        min: 0,
-        max: 100,
+        min: testMin,
+        max: testMax,
       },
     ];
 
@@ -87,7 +77,7 @@
       size: {
         width: 1500,
         height: 790,
-        font: 16,
+        font: 15,
       },
       datas: testDataList,
       labels: [
