@@ -25,8 +25,10 @@ interface ChartDataType {
 }
 
 interface ChartPaddingType {
-  x: number;
-  y: number;
+  left: number;
+  bottom: number;
+  right: number;
+  top: number;
 }
 
 type SvgInHtml = HTMLElement & SVGElement;
@@ -41,7 +43,7 @@ class Chart {
   private width: number;
   private hegiht: number;
   private fontSize: number;
-  private padding: ChartPaddingType = { x: 0, y: 0 };
+  private padding: ChartPaddingType = { bottom: 0, left: 0, top: 0, right: 0 };
 
   private datas: ChartDataType[];
   private labels: string[]; // x축에서 표현되는 라벨 들
@@ -52,7 +54,7 @@ class Chart {
 
   constructor(data: ChartType) {
     const { datas, size, targetId, labels } = data;
-    this.chart = document.createElementNS(this.svgNs, 'svg') as SvgInHtml;
+    this.chart = this.createElement('svg') as SvgInHtml;
 
     this.targetId = targetId;
     this.width = size.width;
@@ -68,6 +70,10 @@ class Chart {
     console.log(datas);
   }
 
+  private createElement(tag: string) {
+    return document.createElementNS(this.svgNs, tag);
+  }
+
   private setSVGPadding = () => {
     // 1. Y-Padding
     // find max y-label length
@@ -76,8 +82,11 @@ class Chart {
     this.padding = {
       ...this.padding,
       // mix font-size and datas.length
-      x: this.fontSize + this.datas.length * 30,
-      y: this.fontSize + Math.ceil(Math.log(this.maxData + 1) / Math.LN10) * 10,
+      bottom: this.fontSize + this.datas.length * 30,
+      left:
+        this.fontSize + Math.ceil(Math.log(this.maxData + 1) / Math.LN10) * 10,
+      top: 0,
+      right: 0,
     };
   };
 
@@ -90,25 +99,25 @@ class Chart {
 
   private setAxis = () => {
     // 1. Create G Tag
-    let Axis = document.createElementNS(this.svgNs, 'g');
+    let Axis = this.createElement('g');
     Axis.setAttribute('class', 'axis');
     Axis.setAttribute('stroke', '#fff');
     Axis.setAttribute('stroke-width', '5');
 
     // 2. Draw X Axis
-    let xAxis = document.createElementNS(this.svgNs, 'line');
-    xAxis.setAttribute('x1', this.padding.y + '');
+    let xAxis = this.createElement('line');
+    xAxis.setAttribute('x1', this.padding.left + '');
     xAxis.setAttribute('x2', this.width + '');
-    xAxis.setAttribute('y1', this.hegiht - this.padding.x + '');
-    xAxis.setAttribute('y2', this.hegiht - this.padding.x + '');
+    xAxis.setAttribute('y1', this.hegiht - this.padding.bottom + '');
+    xAxis.setAttribute('y2', this.hegiht - this.padding.bottom + '');
     xAxis.classList.add('axis__x');
 
     // 3. Draw Y Axis
-    let yAxis = document.createElementNS(this.svgNs, 'line');
-    yAxis.setAttribute('x1', this.padding.y + '');
-    yAxis.setAttribute('x2', this.padding.y + '');
+    let yAxis = this.createElement('line');
+    yAxis.setAttribute('x1', this.padding.left + '');
+    yAxis.setAttribute('x2', this.padding.left + '');
     yAxis.setAttribute('y1', '0');
-    yAxis.setAttribute('y2', this.hegiht - this.padding.x + '');
+    yAxis.setAttribute('y2', this.hegiht - this.padding.bottom + '');
     yAxis.classList.add('axis__y');
 
     Axis.appendChild(xAxis);
@@ -127,13 +136,10 @@ class Chart {
 
   private setPoints = () => {
     // set Color
-    const defsTagOfColor = document.createElementNS(this.svgNs, 'defs');
-    const linearGradientTag = document.createElementNS(
-      this.svgNs,
-      'linearGradient'
-    );
-    const stop1 = document.createElementNS(this.svgNs, 'stop');
-    const stop2 = document.createElementNS(this.svgNs, 'stop');
+    const defsTagOfColor = this.createElement('defs');
+    const linearGradientTag = this.createElement('linearGradient');
+    const stop1 = this.createElement('stop');
+    const stop2 = this.createElement('stop');
 
     linearGradientTag.setAttribute('id', 'paint1');
     linearGradientTag.setAttribute('gradientTransform', 'rotate(90)');
@@ -151,26 +157,26 @@ class Chart {
     this.chart.appendChild(defsTagOfColor);
 
     // make g container
-    const gTagOfPolyLine = document.createElementNS(this.svgNs, 'g');
+    const gTagOfPolyLine = this.createElement('g');
     gTagOfPolyLine.classList.add('datas');
 
     for (let i = 0; i < this.datas.length; i++) {
       let points = this.datas[i].data
         .map((value, j) => {
           let x =
-            (j / (this.xAxisCount - 1)) * (this.width - this.padding.y) +
-            this.padding.y;
+            (j / (this.xAxisCount - 1)) * (this.width - this.padding.left) +
+            this.padding.left;
           let y =
             this.hegiht -
-            this.padding.x -
-            (this.hegiht - this.padding.x) * (value / this.maxData);
+            this.padding.bottom -
+            (this.hegiht - this.padding.bottom) * (value / this.maxData);
 
           return `${x},${y}`;
         })
         .join(' ');
 
       // draw polylines
-      const polyLine = document.createElementNS(this.svgNs, 'polyline');
+      const polyLine = this.createElement('polyline');
       polyLine.setAttribute('points', points);
       if (i === 0) {
         polyLine.setAttribute('stroke', "url('#paint1')");
@@ -189,9 +195,9 @@ class Chart {
   };
 
   private setLabel = () => {
-    const gTagOfText = document.createElementNS(this.svgNs, 'g');
-    const gTagOfXLabel = document.createElementNS(this.svgNs, 'g');
-    const gTagOfYLabel = document.createElementNS(this.svgNs, 'g');
+    const gTagOfText = this.createElement('g');
+    const gTagOfXLabel = this.createElement('g');
+    const gTagOfYLabel = this.createElement('g');
 
     gTagOfText.setAttribute('fill', '#fff');
     gTagOfText.setAttribute('font-size', this.fontSize + 'px');
@@ -204,11 +210,11 @@ class Chart {
     // xLabel
     this.labels.map((label, i) => {
       let x =
-        (i / (this.xAxisCount - 1)) * (this.width - this.padding.y) +
-        this.padding.y;
-      let y = this.hegiht - this.padding.x + this.fontSize * 2;
+        (i / (this.xAxisCount - 1)) * (this.width - this.padding.left) +
+        this.padding.left;
+      let y = this.hegiht - this.padding.bottom + this.fontSize * 2;
 
-      const text = document.createElementNS(this.svgNs, 'text');
+      const text = this.createElement('text');
       text.setAttribute('x', x + '');
       text.setAttribute('y', y + '');
       text.append(label);
@@ -222,14 +228,14 @@ class Chart {
     // 2. x, y좌표 생성
     for (let i = 0; i <= this.yAxisCount; i++) {
       let x =
-        this.padding.x - Math.ceil(Math.log(this.maxData + 1) / Math.LN10);
-      let y = (this.hegiht - this.padding.x) * (i / this.yAxisCount);
+        this.padding.bottom - Math.ceil(Math.log(this.maxData + 1) / Math.LN10);
+      let y = (this.hegiht - this.padding.bottom) * (i / this.yAxisCount);
       let label =
         ((this.yAxisCount - i) / this.yAxisCount) *
           (this.maxData - this.minData) +
         this.minData;
 
-      const text = document.createElementNS(this.svgNs, 'text');
+      const text = this.createElement('text');
       text.setAttribute('x', x + '');
       text.setAttribute('y', y + '');
       text.append(label + '');
@@ -242,15 +248,15 @@ class Chart {
   };
 
   private setGuideLine = () => {
-    const gTagOfLine = document.createElementNS(this.svgNs, 'g');
+    const gTagOfLine = this.createElement('g');
     gTagOfLine.setAttribute('stroke', '#fff');
     gTagOfLine.setAttribute('stroke-weight', '1');
     for (let i = 0; i <= this.yAxisCount; i++) {
-      const x1 = this.padding.y;
+      const x1 = this.padding.left;
       const x2 = this.width;
-      const y = (this.hegiht - this.padding.x) * (i / this.yAxisCount);
+      const y = (this.hegiht - this.padding.bottom) * (i / this.yAxisCount);
 
-      const line = document.createElementNS(this.svgNs, 'line');
+      const line = this.createElement('line');
       line.setAttribute('x1', x1 + '');
       line.setAttribute('x2', x2 + '');
       line.setAttribute('y1', y + '');

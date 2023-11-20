@@ -13,7 +13,7 @@ var Chart = /** @class */ (function () {
     function Chart(data) {
         var _this = this;
         this.svgNs = 'http://www.w3.org/2000/svg';
-        this.padding = { x: 0, y: 0 };
+        this.padding = { bottom: 0, left: 0, top: 0, right: 0 };
         this.yAxisCount = 10;
         this.maxData = 0; // y축에서 표현되는 가장 큰 수
         this.minData = 0; // y축에서 표현되는 가장 작은 수
@@ -24,7 +24,7 @@ var Chart = /** @class */ (function () {
             // 2. X-Padding
             _this.padding = __assign(__assign({}, _this.padding), { 
                 // mix font-size and datas.length
-                x: _this.fontSize + _this.datas.length * 30, y: _this.fontSize + Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10 });
+                bottom: _this.fontSize + _this.datas.length * 30, left: _this.fontSize + Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10, top: 0, right: 0 });
         };
         this.setSVGElement = function () {
             // Make SVG Container
@@ -34,23 +34,23 @@ var Chart = /** @class */ (function () {
         };
         this.setAxis = function () {
             // 1. Create G Tag
-            var Axis = document.createElementNS(_this.svgNs, 'g');
+            var Axis = _this.createElement('g');
             Axis.setAttribute('class', 'axis');
             Axis.setAttribute('stroke', '#fff');
             Axis.setAttribute('stroke-width', '5');
             // 2. Draw X Axis
-            var xAxis = document.createElementNS(_this.svgNs, 'line');
-            xAxis.setAttribute('x1', _this.padding.y + '');
+            var xAxis = _this.createElement('line');
+            xAxis.setAttribute('x1', _this.padding.left + '');
             xAxis.setAttribute('x2', _this.width + '');
-            xAxis.setAttribute('y1', _this.hegiht - _this.padding.x + '');
-            xAxis.setAttribute('y2', _this.hegiht - _this.padding.x + '');
+            xAxis.setAttribute('y1', _this.hegiht - _this.padding.bottom + '');
+            xAxis.setAttribute('y2', _this.hegiht - _this.padding.bottom + '');
             xAxis.classList.add('axis__x');
             // 3. Draw Y Axis
-            var yAxis = document.createElementNS(_this.svgNs, 'line');
-            yAxis.setAttribute('x1', _this.padding.y + '');
-            yAxis.setAttribute('x2', _this.padding.y + '');
+            var yAxis = _this.createElement('line');
+            yAxis.setAttribute('x1', _this.padding.left + '');
+            yAxis.setAttribute('x2', _this.padding.left + '');
             yAxis.setAttribute('y1', '0');
-            yAxis.setAttribute('y2', _this.hegiht - _this.padding.x + '');
+            yAxis.setAttribute('y2', _this.hegiht - _this.padding.bottom + '');
             yAxis.classList.add('axis__y');
             Axis.appendChild(xAxis);
             Axis.appendChild(yAxis);
@@ -66,10 +66,10 @@ var Chart = /** @class */ (function () {
         };
         this.setPoints = function () {
             // set Color
-            var defsTagOfColor = document.createElementNS(_this.svgNs, 'defs');
-            var linearGradientTag = document.createElementNS(_this.svgNs, 'linearGradient');
-            var stop1 = document.createElementNS(_this.svgNs, 'stop');
-            var stop2 = document.createElementNS(_this.svgNs, 'stop');
+            var defsTagOfColor = _this.createElement('defs');
+            var linearGradientTag = _this.createElement('linearGradient');
+            var stop1 = _this.createElement('stop');
+            var stop2 = _this.createElement('stop');
             linearGradientTag.setAttribute('id', 'paint1');
             linearGradientTag.setAttribute('gradientTransform', 'rotate(90)');
             stop1.setAttribute('stop-color', '#FA00FF');
@@ -80,21 +80,21 @@ var Chart = /** @class */ (function () {
             defsTagOfColor.appendChild(linearGradientTag);
             _this.chart.appendChild(defsTagOfColor);
             // make g container
-            var gTagOfPolyLine = document.createElementNS(_this.svgNs, 'g');
+            var gTagOfPolyLine = _this.createElement('g');
             gTagOfPolyLine.classList.add('datas');
             for (var i = 0; i < _this.datas.length; i++) {
                 var points = _this.datas[i].data
                     .map(function (value, j) {
-                    var x = (j / (_this.xAxisCount - 1)) * (_this.width - _this.padding.y) +
-                        _this.padding.y;
+                    var x = (j / (_this.xAxisCount - 1)) * (_this.width - _this.padding.left) +
+                        _this.padding.left;
                     var y = _this.hegiht -
-                        _this.padding.x -
-                        (_this.hegiht - _this.padding.x) * (value / _this.maxData);
+                        _this.padding.bottom -
+                        (_this.hegiht - _this.padding.bottom) * (value / _this.maxData);
                     return "".concat(x, ",").concat(y);
                 })
                     .join(' ');
                 // draw polylines
-                var polyLine = document.createElementNS(_this.svgNs, 'polyline');
+                var polyLine = _this.createElement('polyline');
                 polyLine.setAttribute('points', points);
                 if (i === 0) {
                     polyLine.setAttribute('stroke', "url('#paint1')");
@@ -111,9 +111,9 @@ var Chart = /** @class */ (function () {
             _this.chart.appendChild(gTagOfPolyLine);
         };
         this.setLabel = function () {
-            var gTagOfText = document.createElementNS(_this.svgNs, 'g');
-            var gTagOfXLabel = document.createElementNS(_this.svgNs, 'g');
-            var gTagOfYLabel = document.createElementNS(_this.svgNs, 'g');
+            var gTagOfText = _this.createElement('g');
+            var gTagOfXLabel = _this.createElement('g');
+            var gTagOfYLabel = _this.createElement('g');
             gTagOfText.setAttribute('fill', '#fff');
             gTagOfText.setAttribute('font-size', _this.fontSize + 'px');
             gTagOfText.classList.add('labels');
@@ -121,10 +121,10 @@ var Chart = /** @class */ (function () {
             gTagOfYLabel.setAttribute('text-anchor', 'end');
             // xLabel
             _this.labels.map(function (label, i) {
-                var x = (i / (_this.xAxisCount - 1)) * (_this.width - _this.padding.y) +
-                    _this.padding.y;
-                var y = _this.hegiht - _this.padding.x + _this.fontSize * 2;
-                var text = document.createElementNS(_this.svgNs, 'text');
+                var x = (i / (_this.xAxisCount - 1)) * (_this.width - _this.padding.left) +
+                    _this.padding.left;
+                var y = _this.hegiht - _this.padding.bottom + _this.fontSize * 2;
+                var text = _this.createElement('text');
                 text.setAttribute('x', x + '');
                 text.setAttribute('y', y + '');
                 text.append(label);
@@ -135,12 +135,12 @@ var Chart = /** @class */ (function () {
             // 1. 10개의 y lable 데이터 생성
             // 2. x, y좌표 생성
             for (var i = 0; i <= _this.yAxisCount; i++) {
-                var x = _this.padding.x - Math.ceil(Math.log(_this.maxData + 1) / Math.LN10);
-                var y = (_this.hegiht - _this.padding.x) * (i / _this.yAxisCount);
+                var x = _this.padding.bottom - Math.ceil(Math.log(_this.maxData + 1) / Math.LN10);
+                var y = (_this.hegiht - _this.padding.bottom) * (i / _this.yAxisCount);
                 var label = ((_this.yAxisCount - i) / _this.yAxisCount) *
                     (_this.maxData - _this.minData) +
                     _this.minData;
-                var text = document.createElementNS(_this.svgNs, 'text');
+                var text = _this.createElement('text');
                 text.setAttribute('x', x + '');
                 text.setAttribute('y', y + '');
                 text.append(label + '');
@@ -150,14 +150,14 @@ var Chart = /** @class */ (function () {
             _this.chart.appendChild(gTagOfText);
         };
         this.setGuideLine = function () {
-            var gTagOfLine = document.createElementNS(_this.svgNs, 'g');
+            var gTagOfLine = _this.createElement('g');
             gTagOfLine.setAttribute('stroke', '#fff');
             gTagOfLine.setAttribute('stroke-weight', '1');
             for (var i = 0; i <= _this.yAxisCount; i++) {
-                var x1 = _this.padding.y;
+                var x1 = _this.padding.left;
                 var x2 = _this.width;
-                var y = (_this.hegiht - _this.padding.x) * (i / _this.yAxisCount);
-                var line = document.createElementNS(_this.svgNs, 'line');
+                var y = (_this.hegiht - _this.padding.bottom) * (i / _this.yAxisCount);
+                var line = _this.createElement('line');
                 line.setAttribute('x1', x1 + '');
                 line.setAttribute('x2', x2 + '');
                 line.setAttribute('y1', y + '');
@@ -182,7 +182,7 @@ var Chart = /** @class */ (function () {
             (_a = document.getElementById(_this.targetId)) === null || _a === void 0 ? void 0 : _a.appendChild(_this.chart);
         };
         var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels;
-        this.chart = document.createElementNS(this.svgNs, 'svg');
+        this.chart = this.createElement('svg');
         this.targetId = targetId;
         this.width = size.width;
         this.hegiht = size.height;
@@ -194,5 +194,8 @@ var Chart = /** @class */ (function () {
         this.minData = Math.min.apply(Math, datas.map(function (data) { return data.min; }));
         console.log(datas);
     }
+    Chart.prototype.createElement = function (tag) {
+        return document.createElementNS(this.svgNs, tag);
+    };
     return Chart;
 }());
