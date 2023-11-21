@@ -24,7 +24,7 @@ var Chart = /** @class */ (function () {
             // 2. X-Padding
             _this.padding = __assign(__assign({}, _this.padding), { 
                 // mix font-size and datas.length
-                bottom: _this.fontSize + _this.datas.length * 30, left: _this.fontSize + Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10, top: 0, right: 0 });
+                bottom: _this.fontSize + _this.datas.length * 30, top: _this.fontSize + _this.datas.length * 30, left: _this.fontSize + Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10, right: _this.fontSize + Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10 });
         };
         this.setSVGElement = function () {
             // Make SVG Container
@@ -42,7 +42,7 @@ var Chart = /** @class */ (function () {
             // 2. Draw X Axis
             var xAxis = _this.createElement('line', [
                 { property: 'x1', value: _this.padding.left + '' },
-                { property: 'x2', value: _this.width + '' },
+                { property: 'x2', value: _this.width - _this.padding.right + '' },
                 { property: 'y1', value: _this.hegiht - _this.padding.bottom + '' },
                 { property: 'y2', value: _this.hegiht - _this.padding.bottom + '' },
                 { property: 'class', value: 'axis__x' },
@@ -51,7 +51,7 @@ var Chart = /** @class */ (function () {
             var yAxis = _this.createElement('line', [
                 { property: 'x1', value: _this.padding.left + '' },
                 { property: 'x2', value: _this.padding.left + '' },
-                { property: 'y1', value: '0' },
+                { property: 'y1', value: _this.padding.top + '' },
                 { property: 'y2', value: _this.hegiht - _this.padding.bottom + '' },
                 { property: 'class', value: 'axis__y' },
             ]);
@@ -69,7 +69,8 @@ var Chart = /** @class */ (function () {
             var gTagOfYLabel = _this.createElement('g');
             // xLabel
             _this.labels.map(function (label, i) {
-                var x = (i / (_this.xAxisCount - 1)) * (_this.width - _this.padding.left) +
+                var x = (i / (_this.xAxisCount - 1)) *
+                    (_this.width - _this.padding.left - _this.padding.right) +
                     _this.padding.left;
                 var y = _this.hegiht - _this.padding.bottom + _this.fontSize * 2;
                 var text = _this.createElement('text', [
@@ -84,7 +85,9 @@ var Chart = /** @class */ (function () {
             // 2. x, y좌표 생성
             for (var i = 0; i <= _this.yAxisCount; i++) {
                 var x = _this.padding.bottom - Math.ceil(Math.log(_this.maxData + 1) / Math.LN10);
-                var y = (_this.hegiht - _this.padding.bottom) * (i / _this.yAxisCount);
+                var y = (_this.hegiht - _this.padding.bottom - _this.padding.top) *
+                    (i / _this.yAxisCount) +
+                    _this.padding.top;
                 var label = ((_this.yAxisCount - i) / _this.yAxisCount) *
                     (_this.maxData - _this.minData) +
                     _this.minData;
@@ -105,8 +108,10 @@ var Chart = /** @class */ (function () {
             ]);
             for (var i = 0; i <= _this.yAxisCount; i++) {
                 var x1 = _this.padding.left;
-                var x2 = _this.width;
-                var y = (_this.hegiht - _this.padding.bottom) * (i / _this.yAxisCount);
+                var x2 = _this.width - _this.padding.right;
+                var y = (_this.hegiht - _this.padding.bottom - _this.padding.top) *
+                    (i / _this.yAxisCount) +
+                    _this.padding.top;
                 var line = _this.createElement('line', [
                     { property: 'x1', value: x1 + '' },
                     { property: 'x2', value: x2 + '' },
@@ -138,11 +143,15 @@ var Chart = /** @class */ (function () {
             for (var i = 0; i < _this.datas.length; i++) {
                 var points = _this.datas[i].data
                     .map(function (value, j) {
-                    var x = (j / (_this.xAxisCount - 1)) * (_this.width - _this.padding.left) +
+                    var x = (j / (_this.xAxisCount - 1)) *
+                        (_this.width - _this.padding.left - _this.padding.right) +
                         _this.padding.left;
                     var y = _this.hegiht -
+                        _this.padding.top -
                         _this.padding.bottom -
-                        (_this.hegiht - _this.padding.bottom) * (value / _this.maxData);
+                        (_this.hegiht - _this.padding.bottom - _this.padding.top) *
+                            ((value - _this.minData) / (_this.maxData - _this.minData)) +
+                        _this.padding.top;
                     return "".concat(x, ",").concat(y);
                 })
                     .join(' ');
@@ -166,8 +175,6 @@ var Chart = /** @class */ (function () {
         this.setContainer = function () {
             // 1. Make SVG Container
             _this.setSVGElement();
-            // 2. Set Padding
-            _this.setSVGPadding();
             // 3. Draw X and Y Axis
             _this.setAxis();
             // 4. Draw Label
@@ -178,10 +185,12 @@ var Chart = /** @class */ (function () {
         // rendering for chart
         this.render = function () {
             var _a;
-            // 컨테이너 크기 및 Axios 구축
-            _this.setContainer();
+            // 1. Set Padding
+            _this.setSVGPadding();
             // 데이터 구축
             _this.setPoints();
+            // 컨테이너 크기 및 Axios 구축
+            _this.setContainer();
             // last point
             (_a = document.getElementById(_this.targetId)) === null || _a === void 0 ? void 0 : _a.appendChild(_this.chart);
         };

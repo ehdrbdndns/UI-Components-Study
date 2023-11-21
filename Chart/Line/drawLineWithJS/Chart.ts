@@ -109,10 +109,11 @@ class Chart {
       ...this.padding,
       // mix font-size and datas.length
       bottom: this.fontSize + this.datas.length * 30,
+      top: this.fontSize + this.datas.length * 30,
       left:
         this.fontSize + Math.ceil(Math.log(this.maxData + 1) / Math.LN10) * 10,
-      top: 0,
-      right: 0,
+      right:
+        this.fontSize + Math.ceil(Math.log(this.maxData + 1) / Math.LN10) * 10,
     };
   };
 
@@ -134,7 +135,7 @@ class Chart {
     // 2. Draw X Axis
     let xAxis = this.createElement('line', [
       { property: 'x1', value: this.padding.left + '' },
-      { property: 'x2', value: this.width + '' },
+      { property: 'x2', value: this.width - this.padding.right + '' },
       { property: 'y1', value: this.hegiht - this.padding.bottom + '' },
       { property: 'y2', value: this.hegiht - this.padding.bottom + '' },
       { property: 'class', value: 'axis__x' },
@@ -144,7 +145,7 @@ class Chart {
     let yAxis = this.createElement('line', [
       { property: 'x1', value: this.padding.left + '' },
       { property: 'x2', value: this.padding.left + '' },
-      { property: 'y1', value: '0' },
+      { property: 'y1', value: this.padding.top + '' },
       { property: 'y2', value: this.hegiht - this.padding.bottom + '' },
       { property: 'class', value: 'axis__y' },
     ]);
@@ -166,7 +167,8 @@ class Chart {
     // xLabel
     this.labels.map((label, i) => {
       let x =
-        (i / (this.xAxisCount - 1)) * (this.width - this.padding.left) +
+        (i / (this.xAxisCount - 1)) *
+          (this.width - this.padding.left - this.padding.right) +
         this.padding.left;
       let y = this.hegiht - this.padding.bottom + this.fontSize * 2;
 
@@ -186,7 +188,10 @@ class Chart {
     for (let i = 0; i <= this.yAxisCount; i++) {
       let x =
         this.padding.bottom - Math.ceil(Math.log(this.maxData + 1) / Math.LN10);
-      let y = (this.hegiht - this.padding.bottom) * (i / this.yAxisCount);
+      let y =
+        (this.hegiht - this.padding.bottom - this.padding.top) *
+          (i / this.yAxisCount) +
+        this.padding.top;
       let label =
         ((this.yAxisCount - i) / this.yAxisCount) *
           (this.maxData - this.minData) +
@@ -196,6 +201,7 @@ class Chart {
         { property: 'x', value: x + '' },
         { property: 'y', value: y + '' },
       ]);
+
       text.append(label + '');
 
       gTagOfYLabel.appendChild(text);
@@ -216,8 +222,11 @@ class Chart {
 
     for (let i = 0; i <= this.yAxisCount; i++) {
       const x1 = this.padding.left;
-      const x2 = this.width;
-      const y = (this.hegiht - this.padding.bottom) * (i / this.yAxisCount);
+      const x2 = this.width - this.padding.right;
+      const y =
+        (this.hegiht - this.padding.bottom - this.padding.top) *
+          (i / this.yAxisCount) +
+        this.padding.top;
 
       const line = this.createElement('line', [
         { property: 'x1', value: x1 + '' },
@@ -262,12 +271,16 @@ class Chart {
       let points = this.datas[i].data
         .map((value, j) => {
           let x =
-            (j / (this.xAxisCount - 1)) * (this.width - this.padding.left) +
+            (j / (this.xAxisCount - 1)) *
+              (this.width - this.padding.left - this.padding.right) +
             this.padding.left;
           let y =
             this.hegiht -
+            this.padding.top -
             this.padding.bottom -
-            (this.hegiht - this.padding.bottom) * (value / this.maxData);
+            (this.hegiht - this.padding.bottom - this.padding.top) *
+              ((value - this.minData) / (this.maxData - this.minData)) +
+            this.padding.top;
 
           return `${x},${y}`;
         })
@@ -295,8 +308,6 @@ class Chart {
   protected setContainer = () => {
     // 1. Make SVG Container
     this.setSVGElement();
-    // 2. Set Padding
-    this.setSVGPadding();
     // 3. Draw X and Y Axis
     this.setAxis();
     // 4. Draw Label
@@ -307,11 +318,12 @@ class Chart {
 
   // rendering for chart
   public render = () => {
-    // 컨테이너 크기 및 Axios 구축
-    this.setContainer();
-
+    // 1. Set Padding
+    this.setSVGPadding();
     // 데이터 구축
     this.setPoints();
+    // 컨테이너 크기 및 Axios 구축
+    this.setContainer();
 
     // last point
 
