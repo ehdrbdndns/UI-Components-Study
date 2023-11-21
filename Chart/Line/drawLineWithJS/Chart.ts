@@ -18,10 +18,12 @@ interface ChartDataType {
   min: number;
   // 데이터들의 최대 값
   max: number;
-  // 차트 라인의 색깔
-  color: string;
+  // 사용자 지정 색깔
+  customColor?: (chart: Element, ns: string) => string;
+  // 기본 color
+  color?: string;
   // 차트 라인의 두께
-  weight: number;
+  width: number;
 }
 
 interface ChartPaddingType {
@@ -81,8 +83,6 @@ class Chart {
     });
   }
 
-  private createElement(tag: string): Element;
-  private createElement(tag: string, attributes: AttributeType[]): Element;
   private createElement(tag: string, attributes?: AttributeType[]): Element {
     const newTag = document.createElementNS(this.svgNs, tag);
     if (attributes !== undefined) {
@@ -242,27 +242,6 @@ class Chart {
   };
 
   private setPoints = () => {
-    // set Color
-    const defsTagOfColor = this.createElement('defs');
-    const linearGradientTag = this.createElement('linearGradient');
-    const stop1 = this.createElement('stop');
-    const stop2 = this.createElement('stop');
-
-    linearGradientTag.setAttribute('id', 'paint1');
-    linearGradientTag.setAttribute('gradientTransform', 'rotate(90)');
-
-    stop1.setAttribute('stop-color', '#FA00FF');
-
-    stop2.setAttribute('offset', '1');
-    stop2.setAttribute('stop-color', '#0085FF');
-
-    linearGradientTag.appendChild(stop1);
-    linearGradientTag.appendChild(stop2);
-
-    defsTagOfColor.appendChild(linearGradientTag);
-
-    this.chart.appendChild(defsTagOfColor);
-
     // make g container
     const gTagOfPolyLine = this.createElement('g');
     gTagOfPolyLine.classList.add('datas');
@@ -289,13 +268,16 @@ class Chart {
       // draw polylines
       const polyLine = this.createElement('polyline');
       polyLine.setAttribute('points', points);
-      if (i === 0) {
-        polyLine.setAttribute('stroke', "url('#paint1')");
+      // set colors
+
+      if (this.datas[i].customColor) {
+        const colorId = this.datas[i].customColor?.(this.chart, this.svgNs);
+        polyLine.setAttribute('stroke', `url('#${colorId}')`);
       } else {
-        polyLine.setAttribute('stroke', this.datas[i].color);
+        polyLine.setAttribute('stroke', this.datas[i].color + '');
       }
       polyLine.setAttribute('fill', 'none');
-      polyLine.setAttribute('stroke-width', this.datas[i].weight + '');
+      polyLine.setAttribute('stroke-width', this.datas[i].width + '');
       polyLine.setAttribute('stroke-linecap', 'round');
       polyLine.setAttribute('stroke-linejoin', 'round');
 

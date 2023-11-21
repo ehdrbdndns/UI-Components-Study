@@ -27,8 +27,35 @@
     const testDataList = [
       {
         label: 'Test1',
-        color: '#fff',
-        weight: 8,
+        customColor: (chart, ns) => {
+          let id = 'paint1';
+
+          const defsTagOfColor = document.createElementNS(ns, 'defs');
+
+          const linearGradientTag = document.createElementNS(
+            ns,
+            'linearGradient'
+          );
+          linearGradientTag.setAttribute('id', id);
+          linearGradientTag.setAttribute('gradientTransform', 'rotate(90)');
+
+          const stop1 = document.createElementNS(ns, 'stop');
+          stop1.setAttribute('stop-color', '#FA00FF');
+
+          const stop2 = document.createElementNS(ns, 'stop');
+          stop2.setAttribute('offset', '1');
+          stop2.setAttribute('stop-color', '#0085FF');
+
+          linearGradientTag.appendChild(stop1);
+          linearGradientTag.appendChild(stop2);
+
+          defsTagOfColor.appendChild(linearGradientTag);
+
+          chart.appendChild(defsTagOfColor);
+
+          return id;
+        },
+        width: 8,
         data: [
           testMin,
           Math.floor(Math.random() * (testMax - testMin) + testMin),

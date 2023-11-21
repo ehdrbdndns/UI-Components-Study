@@ -123,20 +123,7 @@ var Chart = /** @class */ (function () {
             _this.appendToChart(gTagOfLine);
         };
         this.setPoints = function () {
-            // set Color
-            var defsTagOfColor = _this.createElement('defs');
-            var linearGradientTag = _this.createElement('linearGradient');
-            var stop1 = _this.createElement('stop');
-            var stop2 = _this.createElement('stop');
-            linearGradientTag.setAttribute('id', 'paint1');
-            linearGradientTag.setAttribute('gradientTransform', 'rotate(90)');
-            stop1.setAttribute('stop-color', '#FA00FF');
-            stop2.setAttribute('offset', '1');
-            stop2.setAttribute('stop-color', '#0085FF');
-            linearGradientTag.appendChild(stop1);
-            linearGradientTag.appendChild(stop2);
-            defsTagOfColor.appendChild(linearGradientTag);
-            _this.chart.appendChild(defsTagOfColor);
+            var _a, _b;
             // make g container
             var gTagOfPolyLine = _this.createElement('g');
             gTagOfPolyLine.classList.add('datas');
@@ -158,14 +145,16 @@ var Chart = /** @class */ (function () {
                 // draw polylines
                 var polyLine = _this.createElement('polyline');
                 polyLine.setAttribute('points', points);
-                if (i === 0) {
-                    polyLine.setAttribute('stroke', "url('#paint1')");
+                // set colors
+                if (_this.datas[i].customColor) {
+                    var colorId = (_b = (_a = _this.datas[i]).customColor) === null || _b === void 0 ? void 0 : _b.call(_a, _this.chart, _this.svgNs);
+                    polyLine.setAttribute('stroke', "url('#".concat(colorId, "')"));
                 }
                 else {
-                    polyLine.setAttribute('stroke', _this.datas[i].color);
+                    polyLine.setAttribute('stroke', _this.datas[i].color + '');
                 }
                 polyLine.setAttribute('fill', 'none');
-                polyLine.setAttribute('stroke-width', _this.datas[i].weight + '');
+                polyLine.setAttribute('stroke-width', _this.datas[i].width + '');
                 polyLine.setAttribute('stroke-linecap', 'round');
                 polyLine.setAttribute('stroke-linejoin', 'round');
                 gTagOfPolyLine.appendChild(polyLine);
