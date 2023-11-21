@@ -33,6 +33,11 @@ interface ChartPaddingType {
 
 type SvgInHtml = HTMLElement & SVGElement;
 
+interface AttributeType {
+  property: string;
+  value: string;
+}
+
 class Chart {
   // SVG Container
   private chart: SvgInHtml;
@@ -70,8 +75,29 @@ class Chart {
     console.log(datas);
   }
 
-  private createElement(tag: string) {
-    return document.createElementNS(this.svgNs, tag);
+  private setAttributes(element: Element, attributes: AttributeType[]) {
+    attributes.forEach((attribute) => {
+      element.setAttribute(attribute.property, attribute.value);
+    });
+  }
+
+  private createElement(tag: string): Element;
+  private createElement(tag: string, attributes: AttributeType[]): Element;
+  private createElement(tag: string, attributes?: AttributeType[]): Element {
+    const newTag = document.createElementNS(this.svgNs, tag);
+    if (attributes !== undefined) {
+      this.setAttributes(newTag, attributes);
+    }
+    return newTag;
+  }
+
+  private appendChilds(element: Element, childs: Element[]): Element {
+    childs.forEach((child) => element.appendChild(child));
+    return element;
+  }
+
+  private appendToChart(child: Element) {
+    this.chart.appendChild(child);
   }
 
   private setSVGPadding = () => {
@@ -99,39 +125,111 @@ class Chart {
 
   private setAxis = () => {
     // 1. Create G Tag
-    let Axis = this.createElement('g');
-    Axis.setAttribute('class', 'axis');
-    Axis.setAttribute('stroke', '#fff');
-    Axis.setAttribute('stroke-width', '5');
+    let Axis = this.createElement('g', [
+      { property: 'class', value: 'axis' },
+      { property: 'stroke', value: '#fff' },
+      { property: 'stroke-width', value: '5' },
+    ]);
 
     // 2. Draw X Axis
-    let xAxis = this.createElement('line');
-    xAxis.setAttribute('x1', this.padding.left + '');
-    xAxis.setAttribute('x2', this.width + '');
-    xAxis.setAttribute('y1', this.hegiht - this.padding.bottom + '');
-    xAxis.setAttribute('y2', this.hegiht - this.padding.bottom + '');
-    xAxis.classList.add('axis__x');
+    let xAxis = this.createElement('line', [
+      { property: 'x1', value: this.padding.left + '' },
+      { property: 'x2', value: this.width + '' },
+      { property: 'y1', value: this.hegiht - this.padding.bottom + '' },
+      { property: 'y2', value: this.hegiht - this.padding.bottom + '' },
+      { property: 'class', value: 'axis__x' },
+    ]);
 
     // 3. Draw Y Axis
-    let yAxis = this.createElement('line');
-    yAxis.setAttribute('x1', this.padding.left + '');
-    yAxis.setAttribute('x2', this.padding.left + '');
-    yAxis.setAttribute('y1', '0');
-    yAxis.setAttribute('y2', this.hegiht - this.padding.bottom + '');
-    yAxis.classList.add('axis__y');
+    let yAxis = this.createElement('line', [
+      { property: 'x1', value: this.padding.left + '' },
+      { property: 'x2', value: this.padding.left + '' },
+      { property: 'y1', value: '0' },
+      { property: 'y2', value: this.hegiht - this.padding.bottom + '' },
+      { property: 'class', value: 'axis__y' },
+    ]);
 
-    Axis.appendChild(xAxis);
-    Axis.appendChild(yAxis);
-    this.chart.appendChild(Axis);
+    // insert To C
+    this.appendToChart(this.appendChilds(Axis, [xAxis, yAxis]));
   };
 
-  private setContainer = () => {
-    // 1. Make SVG Container
-    this.setSVGElement();
-    // 2. Set Padding
-    this.setSVGPadding();
-    // 3. Draw X and Y Axis
-    this.setAxis();
+  private setLabel = () => {
+    const gTagOfText = this.createElement('g', [
+      { property: 'fill', value: '#fff' },
+      { property: 'font-size', value: this.fontSize + 'px' },
+      { property: 'class', value: 'labels' },
+      { property: 'text-anchor', value: 'end' },
+    ]);
+    const gTagOfXLabel = this.createElement('g');
+    const gTagOfYLabel = this.createElement('g');
+
+    // xLabel
+    this.labels.map((label, i) => {
+      let x =
+        (i / (this.xAxisCount - 1)) * (this.width - this.padding.left) +
+        this.padding.left;
+      let y = this.hegiht - this.padding.bottom + this.fontSize * 2;
+
+      const text = this.createElement('text', [
+        { property: 'x', value: x + '' },
+        { property: 'y', value: y + '' },
+      ]);
+
+      text.append(label);
+
+      gTagOfXLabel.appendChild(text);
+    });
+
+    // yLabel
+    // 1. 10개의 y lable 데이터 생성
+    // 2. x, y좌표 생성
+    for (let i = 0; i <= this.yAxisCount; i++) {
+      let x =
+        this.padding.bottom - Math.ceil(Math.log(this.maxData + 1) / Math.LN10);
+      let y = (this.hegiht - this.padding.bottom) * (i / this.yAxisCount);
+      let label =
+        ((this.yAxisCount - i) / this.yAxisCount) *
+          (this.maxData - this.minData) +
+        this.minData;
+
+      const text = this.createElement('text', [
+        { property: 'x', value: x + '' },
+        { property: 'y', value: y + '' },
+      ]);
+      text.append(label + '');
+
+      gTagOfYLabel.appendChild(text);
+    }
+
+    // label box
+
+    this.appendToChart(
+      this.appendChilds(gTagOfText, [gTagOfXLabel, gTagOfYLabel])
+    );
+  };
+
+  private setGuideLine = () => {
+    const gTagOfLine = this.createElement('g', [
+      { property: 'stroke', value: '#fff' },
+      { property: 'stroke-wight', value: '1' },
+    ]);
+
+    for (let i = 0; i <= this.yAxisCount; i++) {
+      const x1 = this.padding.left;
+      const x2 = this.width;
+      const y = (this.hegiht - this.padding.bottom) * (i / this.yAxisCount);
+
+      const line = this.createElement('line', [
+        { property: 'x1', value: x1 + '' },
+        { property: 'x2', value: x2 + '' },
+        { property: 'y1', value: y + '' },
+        { property: 'y2', value: y + '' },
+      ]);
+
+      gTagOfLine.appendChild(line);
+    }
+
+    this.appendToChart(gTagOfLine);
   };
 
   private setPoints = () => {
@@ -194,78 +292,17 @@ class Chart {
     this.chart.appendChild(gTagOfPolyLine);
   };
 
-  private setLabel = () => {
-    const gTagOfText = this.createElement('g');
-    const gTagOfXLabel = this.createElement('g');
-    const gTagOfYLabel = this.createElement('g');
-
-    gTagOfText.setAttribute('fill', '#fff');
-    gTagOfText.setAttribute('font-size', this.fontSize + 'px');
-    gTagOfText.classList.add('labels');
-
-    gTagOfXLabel.setAttribute('text-anchor', 'end');
-
-    gTagOfYLabel.setAttribute('text-anchor', 'end');
-
-    // xLabel
-    this.labels.map((label, i) => {
-      let x =
-        (i / (this.xAxisCount - 1)) * (this.width - this.padding.left) +
-        this.padding.left;
-      let y = this.hegiht - this.padding.bottom + this.fontSize * 2;
-
-      const text = this.createElement('text');
-      text.setAttribute('x', x + '');
-      text.setAttribute('y', y + '');
-      text.append(label);
-
-      gTagOfXLabel.appendChild(text);
-    });
-    gTagOfText.appendChild(gTagOfXLabel);
-
-    // yLabel
-    // 1. 10개의 y lable 데이터 생성
-    // 2. x, y좌표 생성
-    for (let i = 0; i <= this.yAxisCount; i++) {
-      let x =
-        this.padding.bottom - Math.ceil(Math.log(this.maxData + 1) / Math.LN10);
-      let y = (this.hegiht - this.padding.bottom) * (i / this.yAxisCount);
-      let label =
-        ((this.yAxisCount - i) / this.yAxisCount) *
-          (this.maxData - this.minData) +
-        this.minData;
-
-      const text = this.createElement('text');
-      text.setAttribute('x', x + '');
-      text.setAttribute('y', y + '');
-      text.append(label + '');
-
-      gTagOfYLabel.appendChild(text);
-    }
-    gTagOfText.appendChild(gTagOfYLabel);
-
-    this.chart.appendChild(gTagOfText);
-  };
-
-  private setGuideLine = () => {
-    const gTagOfLine = this.createElement('g');
-    gTagOfLine.setAttribute('stroke', '#fff');
-    gTagOfLine.setAttribute('stroke-weight', '1');
-    for (let i = 0; i <= this.yAxisCount; i++) {
-      const x1 = this.padding.left;
-      const x2 = this.width;
-      const y = (this.hegiht - this.padding.bottom) * (i / this.yAxisCount);
-
-      const line = this.createElement('line');
-      line.setAttribute('x1', x1 + '');
-      line.setAttribute('x2', x2 + '');
-      line.setAttribute('y1', y + '');
-      line.setAttribute('y2', y + '');
-
-      gTagOfLine.appendChild(line);
-    }
-
-    this.chart.appendChild(gTagOfLine);
+  protected setContainer = () => {
+    // 1. Make SVG Container
+    this.setSVGElement();
+    // 2. Set Padding
+    this.setSVGPadding();
+    // 3. Draw X and Y Axis
+    this.setAxis();
+    // 4. Draw Label
+    this.setLabel();
+    // 5. Draw GuideLine
+    this.setGuideLine();
   };
 
   // rendering for chart
@@ -275,14 +312,6 @@ class Chart {
 
     // 데이터 구축
     this.setPoints();
-
-    // 데이터 라벨링
-    this.setLabel();
-
-    // 가이드 라인
-    this.setGuideLine();
-
-    // 라벨 박스
 
     // last point
 

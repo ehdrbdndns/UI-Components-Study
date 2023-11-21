@@ -34,35 +34,88 @@ var Chart = /** @class */ (function () {
         };
         this.setAxis = function () {
             // 1. Create G Tag
-            var Axis = _this.createElement('g');
-            Axis.setAttribute('class', 'axis');
-            Axis.setAttribute('stroke', '#fff');
-            Axis.setAttribute('stroke-width', '5');
+            var Axis = _this.createElement('g', [
+                { property: 'class', value: 'axis' },
+                { property: 'stroke', value: '#fff' },
+                { property: 'stroke-width', value: '5' },
+            ]);
             // 2. Draw X Axis
-            var xAxis = _this.createElement('line');
-            xAxis.setAttribute('x1', _this.padding.left + '');
-            xAxis.setAttribute('x2', _this.width + '');
-            xAxis.setAttribute('y1', _this.hegiht - _this.padding.bottom + '');
-            xAxis.setAttribute('y2', _this.hegiht - _this.padding.bottom + '');
-            xAxis.classList.add('axis__x');
+            var xAxis = _this.createElement('line', [
+                { property: 'x1', value: _this.padding.left + '' },
+                { property: 'x2', value: _this.width + '' },
+                { property: 'y1', value: _this.hegiht - _this.padding.bottom + '' },
+                { property: 'y2', value: _this.hegiht - _this.padding.bottom + '' },
+                { property: 'class', value: 'axis__x' },
+            ]);
             // 3. Draw Y Axis
-            var yAxis = _this.createElement('line');
-            yAxis.setAttribute('x1', _this.padding.left + '');
-            yAxis.setAttribute('x2', _this.padding.left + '');
-            yAxis.setAttribute('y1', '0');
-            yAxis.setAttribute('y2', _this.hegiht - _this.padding.bottom + '');
-            yAxis.classList.add('axis__y');
-            Axis.appendChild(xAxis);
-            Axis.appendChild(yAxis);
-            _this.chart.appendChild(Axis);
+            var yAxis = _this.createElement('line', [
+                { property: 'x1', value: _this.padding.left + '' },
+                { property: 'x2', value: _this.padding.left + '' },
+                { property: 'y1', value: '0' },
+                { property: 'y2', value: _this.hegiht - _this.padding.bottom + '' },
+                { property: 'class', value: 'axis__y' },
+            ]);
+            // insert To C
+            _this.appendToChart(_this.appendChilds(Axis, [xAxis, yAxis]));
         };
-        this.setContainer = function () {
-            // 1. Make SVG Container
-            _this.setSVGElement();
-            // 2. Set Padding
-            _this.setSVGPadding();
-            // 3. Draw X and Y Axis
-            _this.setAxis();
+        this.setLabel = function () {
+            var gTagOfText = _this.createElement('g', [
+                { property: 'fill', value: '#fff' },
+                { property: 'font-size', value: _this.fontSize + 'px' },
+                { property: 'class', value: 'labels' },
+                { property: 'text-anchor', value: 'end' },
+            ]);
+            var gTagOfXLabel = _this.createElement('g');
+            var gTagOfYLabel = _this.createElement('g');
+            // xLabel
+            _this.labels.map(function (label, i) {
+                var x = (i / (_this.xAxisCount - 1)) * (_this.width - _this.padding.left) +
+                    _this.padding.left;
+                var y = _this.hegiht - _this.padding.bottom + _this.fontSize * 2;
+                var text = _this.createElement('text', [
+                    { property: 'x', value: x + '' },
+                    { property: 'y', value: y + '' },
+                ]);
+                text.append(label);
+                gTagOfXLabel.appendChild(text);
+            });
+            // yLabel
+            // 1. 10개의 y lable 데이터 생성
+            // 2. x, y좌표 생성
+            for (var i = 0; i <= _this.yAxisCount; i++) {
+                var x = _this.padding.bottom - Math.ceil(Math.log(_this.maxData + 1) / Math.LN10);
+                var y = (_this.hegiht - _this.padding.bottom) * (i / _this.yAxisCount);
+                var label = ((_this.yAxisCount - i) / _this.yAxisCount) *
+                    (_this.maxData - _this.minData) +
+                    _this.minData;
+                var text = _this.createElement('text', [
+                    { property: 'x', value: x + '' },
+                    { property: 'y', value: y + '' },
+                ]);
+                text.append(label + '');
+                gTagOfYLabel.appendChild(text);
+            }
+            // label box
+            _this.appendToChart(_this.appendChilds(gTagOfText, [gTagOfXLabel, gTagOfYLabel]));
+        };
+        this.setGuideLine = function () {
+            var gTagOfLine = _this.createElement('g', [
+                { property: 'stroke', value: '#fff' },
+                { property: 'stroke-wight', value: '1' },
+            ]);
+            for (var i = 0; i <= _this.yAxisCount; i++) {
+                var x1 = _this.padding.left;
+                var x2 = _this.width;
+                var y = (_this.hegiht - _this.padding.bottom) * (i / _this.yAxisCount);
+                var line = _this.createElement('line', [
+                    { property: 'x1', value: x1 + '' },
+                    { property: 'x2', value: x2 + '' },
+                    { property: 'y1', value: y + '' },
+                    { property: 'y2', value: y + '' },
+                ]);
+                gTagOfLine.appendChild(line);
+            }
+            _this.appendToChart(gTagOfLine);
         };
         this.setPoints = function () {
             // set Color
@@ -110,61 +163,17 @@ var Chart = /** @class */ (function () {
             }
             _this.chart.appendChild(gTagOfPolyLine);
         };
-        this.setLabel = function () {
-            var gTagOfText = _this.createElement('g');
-            var gTagOfXLabel = _this.createElement('g');
-            var gTagOfYLabel = _this.createElement('g');
-            gTagOfText.setAttribute('fill', '#fff');
-            gTagOfText.setAttribute('font-size', _this.fontSize + 'px');
-            gTagOfText.classList.add('labels');
-            gTagOfXLabel.setAttribute('text-anchor', 'end');
-            gTagOfYLabel.setAttribute('text-anchor', 'end');
-            // xLabel
-            _this.labels.map(function (label, i) {
-                var x = (i / (_this.xAxisCount - 1)) * (_this.width - _this.padding.left) +
-                    _this.padding.left;
-                var y = _this.hegiht - _this.padding.bottom + _this.fontSize * 2;
-                var text = _this.createElement('text');
-                text.setAttribute('x', x + '');
-                text.setAttribute('y', y + '');
-                text.append(label);
-                gTagOfXLabel.appendChild(text);
-            });
-            gTagOfText.appendChild(gTagOfXLabel);
-            // yLabel
-            // 1. 10개의 y lable 데이터 생성
-            // 2. x, y좌표 생성
-            for (var i = 0; i <= _this.yAxisCount; i++) {
-                var x = _this.padding.bottom - Math.ceil(Math.log(_this.maxData + 1) / Math.LN10);
-                var y = (_this.hegiht - _this.padding.bottom) * (i / _this.yAxisCount);
-                var label = ((_this.yAxisCount - i) / _this.yAxisCount) *
-                    (_this.maxData - _this.minData) +
-                    _this.minData;
-                var text = _this.createElement('text');
-                text.setAttribute('x', x + '');
-                text.setAttribute('y', y + '');
-                text.append(label + '');
-                gTagOfYLabel.appendChild(text);
-            }
-            gTagOfText.appendChild(gTagOfYLabel);
-            _this.chart.appendChild(gTagOfText);
-        };
-        this.setGuideLine = function () {
-            var gTagOfLine = _this.createElement('g');
-            gTagOfLine.setAttribute('stroke', '#fff');
-            gTagOfLine.setAttribute('stroke-weight', '1');
-            for (var i = 0; i <= _this.yAxisCount; i++) {
-                var x1 = _this.padding.left;
-                var x2 = _this.width;
-                var y = (_this.hegiht - _this.padding.bottom) * (i / _this.yAxisCount);
-                var line = _this.createElement('line');
-                line.setAttribute('x1', x1 + '');
-                line.setAttribute('x2', x2 + '');
-                line.setAttribute('y1', y + '');
-                line.setAttribute('y2', y + '');
-                gTagOfLine.appendChild(line);
-            }
-            _this.chart.appendChild(gTagOfLine);
+        this.setContainer = function () {
+            // 1. Make SVG Container
+            _this.setSVGElement();
+            // 2. Set Padding
+            _this.setSVGPadding();
+            // 3. Draw X and Y Axis
+            _this.setAxis();
+            // 4. Draw Label
+            _this.setLabel();
+            // 5. Draw GuideLine
+            _this.setGuideLine();
         };
         // rendering for chart
         this.render = function () {
@@ -173,11 +182,6 @@ var Chart = /** @class */ (function () {
             _this.setContainer();
             // 데이터 구축
             _this.setPoints();
-            // 데이터 라벨링
-            _this.setLabel();
-            // 가이드 라인
-            _this.setGuideLine();
-            // 라벨 박스
             // last point
             (_a = document.getElementById(_this.targetId)) === null || _a === void 0 ? void 0 : _a.appendChild(_this.chart);
         };
@@ -194,8 +198,24 @@ var Chart = /** @class */ (function () {
         this.minData = Math.min.apply(Math, datas.map(function (data) { return data.min; }));
         console.log(datas);
     }
-    Chart.prototype.createElement = function (tag) {
-        return document.createElementNS(this.svgNs, tag);
+    Chart.prototype.setAttributes = function (element, attributes) {
+        attributes.forEach(function (attribute) {
+            element.setAttribute(attribute.property, attribute.value);
+        });
+    };
+    Chart.prototype.createElement = function (tag, attributes) {
+        var newTag = document.createElementNS(this.svgNs, tag);
+        if (attributes !== undefined) {
+            this.setAttributes(newTag, attributes);
+        }
+        return newTag;
+    };
+    Chart.prototype.appendChilds = function (element, childs) {
+        childs.forEach(function (child) { return element.appendChild(child); });
+        return element;
+    };
+    Chart.prototype.appendToChart = function (child) {
+        this.chart.appendChild(child);
     };
     return Chart;
 }());
