@@ -59,6 +59,8 @@ class Chart {
   private maxData: number = 0; // y축에서 표현되는 가장 큰 수
   private minData: number = 0; // y축에서 표현되는 가장 작은 수
 
+  private defaultColor = '#fff';
+
   constructor(data: ChartType) {
     const { datas, size, targetId, labels } = data;
     this.chart = this.createElement('svg') as SvgInHtml;
@@ -266,25 +268,33 @@ class Chart {
         .join(' ');
 
       // draw polylines
-      const polyLine = this.createElement('polyline');
-      polyLine.setAttribute('points', points);
-      // set colors
-
-      if (this.datas[i].customColor) {
-        const colorId = this.datas[i].customColor?.(this.chart, this.svgNs);
-        polyLine.setAttribute('stroke', `url('#${colorId}')`);
-      } else {
-        polyLine.setAttribute('stroke', this.datas[i].color + '');
-      }
-      polyLine.setAttribute('fill', 'none');
-      polyLine.setAttribute('stroke-width', this.datas[i].width + '');
-      polyLine.setAttribute('stroke-linecap', 'round');
-      polyLine.setAttribute('stroke-linejoin', 'round');
+      const polyLine = this.createElement('polyline', [
+        { property: 'points', value: points },
+        {
+          property: 'stroke',
+          value: (() => {
+            let color: string | undefined;
+            if (this.datas[i].customColor) {
+              color = `url('#${this.datas[i].customColor?.(
+                this.chart,
+                this.svgNs
+              )}')`;
+            } else if (this.datas[i].color) {
+              color = this.datas[i].color;
+            }
+            return color === undefined ? this.defaultColor : color;
+          })(),
+        },
+        { property: 'fill', value: 'none' },
+        { property: 'stroke-width', value: this.datas[i].width + '' },
+        { property: 'stroke-linecap', value: 'round' },
+        { property: 'stroke-linejoin', value: 'round' },
+      ]);
 
       gTagOfPolyLine.appendChild(polyLine);
     }
 
-    this.chart.appendChild(gTagOfPolyLine);
+    this.appendToChart(gTagOfPolyLine);
   };
 
   protected setContainer = () => {

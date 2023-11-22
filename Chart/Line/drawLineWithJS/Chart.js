@@ -17,6 +17,7 @@ var Chart = /** @class */ (function () {
         this.yAxisCount = 10;
         this.maxData = 0; // y축에서 표현되는 가장 큰 수
         this.minData = 0; // y축에서 표현되는 가장 작은 수
+        this.defaultColor = '#fff';
         this.setSVGPadding = function () {
             // 1. Y-Padding
             // find max y-label length
@@ -123,11 +124,10 @@ var Chart = /** @class */ (function () {
             _this.appendToChart(gTagOfLine);
         };
         this.setPoints = function () {
-            var _a, _b;
             // make g container
             var gTagOfPolyLine = _this.createElement('g');
             gTagOfPolyLine.classList.add('datas');
-            for (var i = 0; i < _this.datas.length; i++) {
+            var _loop_1 = function (i) {
                 var points = _this.datas[i].data
                     .map(function (value, j) {
                     var x = (j / (_this.xAxisCount - 1)) *
@@ -143,23 +143,33 @@ var Chart = /** @class */ (function () {
                 })
                     .join(' ');
                 // draw polylines
-                var polyLine = _this.createElement('polyline');
-                polyLine.setAttribute('points', points);
-                // set colors
-                if (_this.datas[i].customColor) {
-                    var colorId = (_b = (_a = _this.datas[i]).customColor) === null || _b === void 0 ? void 0 : _b.call(_a, _this.chart, _this.svgNs);
-                    polyLine.setAttribute('stroke', "url('#".concat(colorId, "')"));
-                }
-                else {
-                    polyLine.setAttribute('stroke', _this.datas[i].color + '');
-                }
-                polyLine.setAttribute('fill', 'none');
-                polyLine.setAttribute('stroke-width', _this.datas[i].width + '');
-                polyLine.setAttribute('stroke-linecap', 'round');
-                polyLine.setAttribute('stroke-linejoin', 'round');
+                var polyLine = _this.createElement('polyline', [
+                    { property: 'points', value: points },
+                    {
+                        property: 'stroke',
+                        value: (function () {
+                            var _a, _b;
+                            var color;
+                            if (_this.datas[i].customColor) {
+                                color = "url('#".concat((_b = (_a = _this.datas[i]).customColor) === null || _b === void 0 ? void 0 : _b.call(_a, _this.chart, _this.svgNs), "')");
+                            }
+                            else if (_this.datas[i].color) {
+                                color = _this.datas[i].color;
+                            }
+                            return color === undefined ? _this.defaultColor : color;
+                        })(),
+                    },
+                    { property: 'fill', value: 'none' },
+                    { property: 'stroke-width', value: _this.datas[i].width + '' },
+                    { property: 'stroke-linecap', value: 'round' },
+                    { property: 'stroke-linejoin', value: 'round' },
+                ]);
                 gTagOfPolyLine.appendChild(polyLine);
+            };
+            for (var i = 0; i < _this.datas.length; i++) {
+                _loop_1(i);
             }
-            _this.chart.appendChild(gTagOfPolyLine);
+            _this.appendToChart(gTagOfPolyLine);
         };
         this.setContainer = function () {
             // 1. Make SVG Container
