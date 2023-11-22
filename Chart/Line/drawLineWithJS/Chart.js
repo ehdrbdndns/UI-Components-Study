@@ -25,7 +25,9 @@ var Chart = /** @class */ (function () {
             // 2. X-Padding
             _this.padding = __assign(__assign({}, _this.padding), { 
                 // mix font-size and datas.length
-                bottom: _this.fontSize + _this.datas.length * 30, top: _this.fontSize + _this.datas.length * 30, left: _this.fontSize + Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10, right: _this.fontSize + Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10 });
+                bottom: _this.fontSize + _this.datas.length * 30, top: _this.fontSize + _this.datas.length * 30, left: (_this.fontSize +
+                    Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10) *
+                    2, right: _this.fontSize + Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10 });
         };
         this.setSVGElement = function () {
             // Make SVG Container
@@ -82,10 +84,9 @@ var Chart = /** @class */ (function () {
                 gTagOfXLabel.appendChild(text);
             });
             // yLabel
-            // 1. 10개의 y lable 데이터 생성
-            // 2. x, y좌표 생성
             for (var i = 0; i <= _this.yAxisCount; i++) {
-                var x = _this.padding.bottom - Math.ceil(Math.log(_this.maxData + 1) / Math.LN10);
+                var x = _this.padding.left -
+                    Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 3;
                 var y = (_this.hegiht - _this.padding.bottom - _this.padding.top) *
                     (i / _this.yAxisCount) +
                     _this.padding.top;

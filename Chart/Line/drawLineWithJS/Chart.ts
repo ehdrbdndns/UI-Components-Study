@@ -113,7 +113,9 @@ class Chart {
       bottom: this.fontSize + this.datas.length * 30,
       top: this.fontSize + this.datas.length * 30,
       left:
-        this.fontSize + Math.ceil(Math.log(this.maxData + 1) / Math.LN10) * 10,
+        (this.fontSize +
+          Math.ceil(Math.log(this.maxData + 1) / Math.LN10) * 10) *
+        2,
       right:
         this.fontSize + Math.ceil(Math.log(this.maxData + 1) / Math.LN10) * 10,
     };
@@ -185,11 +187,10 @@ class Chart {
     });
 
     // yLabel
-    // 1. 10개의 y lable 데이터 생성
-    // 2. x, y좌표 생성
     for (let i = 0; i <= this.yAxisCount; i++) {
       let x =
-        this.padding.bottom - Math.ceil(Math.log(this.maxData + 1) / Math.LN10);
+        this.padding.left -
+        Math.ceil(Math.log(this.maxData + 1) / Math.LN10) * 3;
       let y =
         (this.hegiht - this.padding.bottom - this.padding.top) *
           (i / this.yAxisCount) +
@@ -318,7 +319,6 @@ class Chart {
     this.setContainer();
 
     // last point
-
     document.getElementById(this.targetId)?.appendChild(this.chart);
   };
 }
