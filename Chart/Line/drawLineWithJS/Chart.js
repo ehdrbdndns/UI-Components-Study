@@ -125,12 +125,13 @@ var Chart = /** @class */ (function () {
             _this.appendToChart(gTagOfLine);
         };
         this.setPoints = function () {
+            var _a;
             // make g container
             var gTagOfPolyLine = _this.createElement('g');
             gTagOfPolyLine.classList.add('datas');
             var _loop_1 = function (i) {
-                var points = _this.datas[i].data
-                    .map(function (value, j) {
+                var data = _this.datas[i];
+                var pointList = data.data.map(function (value, j) {
                     var x = (j / (_this.xAxisCount - 1)) *
                         (_this.width - _this.padding.left - _this.padding.right) +
                         _this.padding.left;
@@ -141,57 +142,123 @@ var Chart = /** @class */ (function () {
                             ((value - _this.minData) / (_this.maxData - _this.minData)) +
                         _this.padding.top;
                     return "".concat(x, ",").concat(y);
-                })
-                    .join(' ');
+                });
+                // set color
+                var customColor = (_a = data.customColor) === null || _a === void 0 ? void 0 : _a.call(data, _this.chart, _this.svgNs);
                 // draw polylines
                 var polyLine = _this.createElement('polyline', [
-                    { property: 'points', value: points },
+                    { property: 'points', value: pointList.join(' ') },
                     {
                         property: 'stroke',
                         value: (function () {
-                            var _a, _b;
                             var color;
-                            if (_this.datas[i].customColor) {
-                                color = "url('#".concat((_b = (_a = _this.datas[i]).customColor) === null || _b === void 0 ? void 0 : _b.call(_a, _this.chart, _this.svgNs), "')");
+                            if (customColor) {
+                                color = "url('#".concat(customColor.line, "')");
                             }
-                            else if (_this.datas[i].color) {
-                                color = _this.datas[i].color;
+                            else {
+                                color = data.color;
                             }
                             return color === undefined ? _this.defaultColor : color;
                         })(),
                     },
                     { property: 'fill', value: 'none' },
-                    { property: 'stroke-width', value: _this.datas[i].width + '' },
+                    { property: 'stroke-width', value: data.width + '' },
                     { property: 'stroke-linecap', value: 'round' },
                     { property: 'stroke-linejoin', value: 'round' },
                 ]);
-                gTagOfPolyLine.appendChild(polyLine);
+                // draw last point circle
+                // lase Circle에 사용될 좌표 값
+                var lastPoint = pointList
+                    .slice(-1)[0]
+                    .split(',')
+                    .map(function (point) { return Number(point); });
+                var gradient = _this.createElement('circle', [
+                    { property: 'cx', value: lastPoint[0] + '' },
+                    { property: 'cy', value: lastPoint[1] + '' },
+                    { property: 'r', value: '30' },
+                    {
+                        property: 'fill',
+                        value: (function () {
+                            var color;
+                            if (customColor && customColor.circle) {
+                                color = "url('#".concat(customColor.circle.gradientId, "')");
+                            }
+                            else {
+                                var circleId = Math.random().toString(16).slice(2) + '-lastpoint';
+                                var defTag = _this.createElement('defs');
+                                var radialGradientTag = _this.createElement('radialGradient', [
+                                    {
+                                        property: 'id',
+                                        value: circleId,
+                                    },
+                                ]);
+                                var radialStop1 = _this.createElement('stop', [
+                                    {
+                                        property: 'stop-color',
+                                        value: data.color === undefined ? _this.defaultColor : data.color,
+                                    },
+                                ]);
+                                var radialStop2 = _this.createElement('stop', [
+                                    { property: 'offset', value: '1' },
+                                    { property: 'stop-opacity', value: '0' },
+                                    {
+                                        property: 'stop-color',
+                                        value: data.color === undefined ? _this.defaultColor : data.color,
+                                    },
+                                ]);
+                                radialGradientTag.appendChild(radialStop1);
+                                radialGradientTag.appendChild(radialStop2);
+                                _this.appendChilds(defTag, [radialGradientTag]);
+                                _this.appendToChart(defTag);
+                                color = "url('#".concat(circleId, "')");
+                            }
+                            return color;
+                        })(),
+                    },
+                ]);
+                _this.appendChilds(gTagOfPolyLine, [gradient]);
+                var circle = _this.createElement('circle', [
+                    { property: 'cx', value: lastPoint[0] + '' },
+                    { property: 'cy', value: lastPoint[1] + '' },
+                    { property: 'r', value: '10' },
+                    {
+                        property: 'fill',
+                        value: (function () {
+                            var color;
+                            if (customColor && customColor.circle) {
+                                color = customColor.circle.circleColor;
+                            }
+                            else {
+                                color = data.color;
+                            }
+                            return color === undefined ? _this.defaultColor : color;
+                        })(),
+                    },
+                ]);
+                _this.appendChilds(gTagOfPolyLine, [polyLine, circle]);
             };
+            // set line
             for (var i = 0; i < _this.datas.length; i++) {
                 _loop_1(i);
             }
             _this.appendToChart(gTagOfPolyLine);
         };
-        this.setContainer = function () {
-            // 1. Make SVG Container
-            _this.setSVGElement();
-            // 3. Draw X and Y Axis
-            _this.setAxis();
-            // 4. Draw Label
-            _this.setLabel();
-            // 5. Draw GuideLine
-            _this.setGuideLine();
-        };
         // rendering for chart
         this.render = function () {
             var _a;
+            // 컨테이너 크기 및 Axios 구축
+            // Make SVG Container
+            _this.setSVGElement();
             // 1. Set Padding
             _this.setSVGPadding();
+            // Draw GuideLine
+            _this.setGuideLine();
             // 데이터 구축
             _this.setPoints();
-            // 컨테이너 크기 및 Axios 구축
-            _this.setContainer();
-            // last point
+            // Draw X and Y Axis
+            _this.setAxis();
+            // Draw Label
+            _this.setLabel();
             (_a = document.getElementById(_this.targetId)) === null || _a === void 0 ? void 0 : _a.appendChild(_this.chart);
         };
         var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels;
@@ -205,7 +272,6 @@ var Chart = /** @class */ (function () {
         this.xAxisCount = labels.length;
         this.maxData = Math.max.apply(Math, datas.map(function (data) { return data.max; }));
         this.minData = Math.min.apply(Math, datas.map(function (data) { return data.min; }));
-        console.log(datas);
     }
     Chart.prototype.setAttributes = function (element, attributes) {
         attributes.forEach(function (attribute) {

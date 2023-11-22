@@ -29,38 +29,10 @@
     let testMin = 30000000;
     const testDataList = [
       {
-        label: 'Test1',
-        customColor: (chart, ns) => {
-          let id = 'paint1';
-
-          const defsTagOfColor = document.createElementNS(ns, 'defs');
-
-          const linearGradientTag = document.createElementNS(
-            ns,
-            'linearGradient'
-          );
-          linearGradientTag.setAttribute('id', id);
-          linearGradientTag.setAttribute('gradientTransform', 'rotate(90)');
-
-          const stop1 = document.createElementNS(ns, 'stop');
-          stop1.setAttribute('stop-color', '#FA00FF');
-
-          const stop2 = document.createElementNS(ns, 'stop');
-          stop2.setAttribute('offset', '1');
-          stop2.setAttribute('stop-color', '#0085FF');
-
-          linearGradientTag.appendChild(stop1);
-          linearGradientTag.appendChild(stop2);
-
-          defsTagOfColor.appendChild(linearGradientTag);
-
-          chart.appendChild(defsTagOfColor);
-
-          return id;
-        },
-        width: 8,
+        label: 'Test2',
+        color: '#fff',
+        width: 3,
         data: [
-          testMin,
           Math.floor(Math.random() * (testMax - testMin) + testMin),
           Math.floor(Math.random() * (testMax - testMin) + testMin),
           Math.floor(Math.random() * (testMax - testMin) + testMin),
@@ -73,16 +45,70 @@
           Math.floor(Math.random() * (testMax - testMin) + testMin),
           Math.floor(Math.random() * (testMax - testMin) + testMin),
           Math.floor(Math.random() * (testMax - testMin) + testMin),
-          testMax,
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
         ],
         min: testMin,
         max: testMax,
       },
       {
-        label: 'Test2',
-        color: '#fff',
-        weight: 3,
+        label: 'Test1',
+        customColor: (chart, ns) => {
+          let lineId = 'paint1';
+
+          const defsTagOfColor = document.createElementNS(ns, 'defs');
+
+          // line
+          const linearGradientTag = document.createElementNS(
+            ns,
+            'linearGradient'
+          );
+          linearGradientTag.setAttribute('id', lineId);
+          linearGradientTag.setAttribute('gradientTransform', 'rotate(90)');
+
+          const linearStop1 = document.createElementNS(ns, 'stop');
+          linearStop1.setAttribute('stop-color', '#FA00FF');
+
+          const linearStop2 = document.createElementNS(ns, 'stop');
+          linearStop2.setAttribute('offset', '1');
+          linearStop2.setAttribute('stop-color', '#0085FF');
+          linearGradientTag.appendChild(linearStop1);
+          linearGradientTag.appendChild(linearStop2);
+
+          // gradient
+          let circleId = 'circleId1';
+          let circleColor = '#FA00FF';
+          const radialGradientTag = document.createElementNS(
+            ns,
+            'radialGradient'
+          );
+          radialGradientTag.setAttribute('id', circleId);
+
+          const radialStop1 = document.createElementNS(ns, 'stop');
+          radialStop1.setAttribute('stop-color', '#FA00FF');
+
+          const radialStop2 = document.createElementNS(ns, 'stop');
+          radialStop2.setAttribute('offset', '1');
+          radialStop2.setAttribute('stop-opacity', '0');
+          radialStop2.setAttribute('stop-color', '#BD00FF');
+
+          radialGradientTag.appendChild(radialStop1);
+          radialGradientTag.appendChild(radialStop2);
+
+          // result
+          defsTagOfColor.appendChild(linearGradientTag);
+          defsTagOfColor.appendChild(radialGradientTag);
+          chart.appendChild(defsTagOfColor);
+          return {
+            line: lineId,
+            circle: {
+              gradientId: circleId,
+              circleColor: circleColor,
+            },
+          };
+        },
+        width: 7,
         data: [
+          Math.floor(Math.random() * (testMax - testMin) + testMin),
           Math.floor(Math.random() * (testMax - testMin) + testMin),
           Math.floor(Math.random() * (testMax - testMin) + testMin),
           Math.floor(Math.random() * (testMax - testMin) + testMin),

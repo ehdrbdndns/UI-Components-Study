@@ -19,7 +19,10 @@ interface ChartDataType {
   // 데이터들의 최대 값
   max: number;
   // 사용자 지정 색깔
-  customColor?: (chart: Element, ns: string) => string;
+  customColor?: (
+    chart: Element,
+    ns: string
+  ) => { line?: string; circle?: { gradientId: string; circleColor: string } };
   // 기본 color
   color?: string;
   // 차트 라인의 두께
@@ -75,8 +78,6 @@ class Chart {
     this.xAxisCount = labels.length;
     this.maxData = Math.max(...datas.map((data) => data.max));
     this.minData = Math.min(...datas.map((data) => data.min));
-
-    console.log(datas);
   }
 
   private setAttributes(element: Element, attributes: AttributeType[]) {
@@ -249,76 +250,154 @@ class Chart {
     const gTagOfPolyLine = this.createElement('g');
     gTagOfPolyLine.classList.add('datas');
 
+    // set line
     for (let i = 0; i < this.datas.length; i++) {
-      let points = this.datas[i].data
-        .map((value, j) => {
-          let x =
-            (j / (this.xAxisCount - 1)) *
-              (this.width - this.padding.left - this.padding.right) +
-            this.padding.left;
-          let y =
-            this.hegiht -
-            this.padding.top -
-            this.padding.bottom -
-            (this.hegiht - this.padding.bottom - this.padding.top) *
-              ((value - this.minData) / (this.maxData - this.minData)) +
-            this.padding.top;
+      const data = this.datas[i];
+      let pointList = data.data.map((value, j) => {
+        let x =
+          (j / (this.xAxisCount - 1)) *
+            (this.width - this.padding.left - this.padding.right) +
+          this.padding.left;
+        let y =
+          this.hegiht -
+          this.padding.top -
+          this.padding.bottom -
+          (this.hegiht - this.padding.bottom - this.padding.top) *
+            ((value - this.minData) / (this.maxData - this.minData)) +
+          this.padding.top;
 
-          return `${x},${y}`;
-        })
-        .join(' ');
+        return `${x},${y}`;
+      });
+
+      // set color
+      let customColor = data.customColor?.(this.chart, this.svgNs);
 
       // draw polylines
       const polyLine = this.createElement('polyline', [
-        { property: 'points', value: points },
+        { property: 'points', value: pointList.join(' ') },
         {
           property: 'stroke',
           value: (() => {
             let color: string | undefined;
-            if (this.datas[i].customColor) {
-              color = `url('#${this.datas[i].customColor?.(
-                this.chart,
-                this.svgNs
-              )}')`;
-            } else if (this.datas[i].color) {
-              color = this.datas[i].color;
+            if (customColor) {
+              color = `url('#${customColor.line}')`;
+            } else {
+              color = data.color;
             }
             return color === undefined ? this.defaultColor : color;
           })(),
         },
         { property: 'fill', value: 'none' },
-        { property: 'stroke-width', value: this.datas[i].width + '' },
+        { property: 'stroke-width', value: data.width + '' },
         { property: 'stroke-linecap', value: 'round' },
         { property: 'stroke-linejoin', value: 'round' },
       ]);
 
-      gTagOfPolyLine.appendChild(polyLine);
+      // draw last point circle
+      // lase Circle에 사용될 좌표 값
+      const lastPoint = pointList
+        .slice(-1)[0]
+        .split(',')
+        .map((point) => Number(point));
+
+      const gradient = this.createElement('circle', [
+        { property: 'cx', value: lastPoint[0] + '' },
+        { property: 'cy', value: lastPoint[1] + '' },
+        { property: 'r', value: '30' },
+        {
+          property: 'fill',
+          value: (() => {
+            let color: string | undefined;
+            if (customColor && customColor.circle) {
+              color = `url('#${customColor.circle.gradientId}')`;
+            } else {
+              const circleId =
+                Math.random().toString(16).slice(2) + '-lastpoint';
+              const defTag = this.createElement('defs');
+
+              const radialGradientTag = this.createElement('radialGradient', [
+                {
+                  property: 'id',
+                  value: circleId,
+                },
+              ]);
+
+              const radialStop1 = this.createElement('stop', [
+                {
+                  property: 'stop-color',
+                  value:
+                    data.color === undefined ? this.defaultColor : data.color,
+                },
+              ]);
+
+              const radialStop2 = this.createElement('stop', [
+                { property: 'offset', value: '1' },
+                { property: 'stop-opacity', value: '0' },
+                {
+                  property: 'stop-color',
+                  value:
+                    data.color === undefined ? this.defaultColor : data.color,
+                },
+              ]);
+
+              radialGradientTag.appendChild(radialStop1);
+              radialGradientTag.appendChild(radialStop2);
+
+              this.appendChilds(defTag, [radialGradientTag]);
+              this.appendToChart(defTag);
+              color = `url('#${circleId}')`;
+            }
+            return color;
+          })(),
+        },
+      ]);
+
+      this.appendChilds(gTagOfPolyLine, [gradient]);
+
+      const circle = this.createElement('circle', [
+        { property: 'cx', value: lastPoint[0] + '' },
+        { property: 'cy', value: lastPoint[1] + '' },
+        { property: 'r', value: '10' },
+        {
+          property: 'fill',
+          value: (() => {
+            let color: string | undefined;
+            if (customColor && customColor.circle) {
+              color = customColor.circle.circleColor;
+            } else {
+              color = data.color;
+            }
+            return color === undefined ? this.defaultColor : color;
+          })(),
+        },
+      ]);
+
+      this.appendChilds(gTagOfPolyLine, [polyLine, circle]);
     }
 
     this.appendToChart(gTagOfPolyLine);
   };
-
-  protected setContainer = () => {
-    // 1. Make SVG Container
-    this.setSVGElement();
-    // 3. Draw X and Y Axis
-    this.setAxis();
-    // 4. Draw Label
-    this.setLabel();
-    // 5. Draw GuideLine
-    this.setGuideLine();
-  };
-
   // rendering for chart
   public render = () => {
+    // 컨테이너 크기 및 Axios 구축
+    // Make SVG Container
+    this.setSVGElement();
+
     // 1. Set Padding
     this.setSVGPadding();
+
+    // Draw GuideLine
+    this.setGuideLine();
+
     // 데이터 구축
     this.setPoints();
-    // 컨테이너 크기 및 Axios 구축
-    this.setContainer();
 
-    // last point
+    // Draw X and Y Axis
+    this.setAxis();
+
+    // Draw Label
+    this.setLabel();
+
     document.getElementById(this.targetId)?.appendChild(this.chart);
   };
 }
