@@ -11,6 +11,7 @@
         width: 100vw;
         height: 100vh;
         background: linear-gradient(180deg, #040108 0%, #250061 100%);
+        box-sizing: border-box;
       }
       .container {
         width: 800px;
@@ -29,7 +30,7 @@
     let testMin = 30000000;
     const testDataList = [
       {
-        label: 'Test2',
+        label: '실제 BTC',
         color: '#fff',
         width: 3,
         data: [
@@ -51,18 +52,14 @@
         max: testMax,
       },
       {
-        label: 'Test1',
-        customColor: (chart, ns) => {
-          let lineId = 'paint1';
-
-          const defsTagOfColor = document.createElementNS(ns, 'defs');
-
+        label: '예측 BTC',
+        customColor: (create) => {
+          let ns = 'http://www.w3.org/2000/svg';
           // line
           const linearGradientTag = document.createElementNS(
             ns,
             'linearGradient'
           );
-          linearGradientTag.setAttribute('id', lineId);
           linearGradientTag.setAttribute('gradientTransform', 'rotate(90)');
 
           const linearStop1 = document.createElementNS(ns, 'stop');
@@ -74,36 +71,43 @@
           linearGradientTag.appendChild(linearStop1);
           linearGradientTag.appendChild(linearStop2);
 
-          // gradient
-          let circleId = 'circleId1';
-          let circleColor = '#FA00FF';
+          // legend
+          const LegendGradientTag = document.createElementNS(
+            ns,
+            'linearGradient'
+          );
+
+          const legendStop1 = document.createElementNS(ns, 'stop');
+          legendStop1.setAttribute('stop-color', '#FA00FF');
+
+          const legendStop2 = document.createElementNS(ns, 'stop');
+          legendStop2.setAttribute('offset', '1');
+          legendStop2.setAttribute('stop-color', '#0085FF');
+          LegendGradientTag.appendChild(legendStop1);
+          LegendGradientTag.appendChild(legendStop2);
+
+          // circle
           const radialGradientTag = document.createElementNS(
             ns,
             'radialGradient'
           );
-          radialGradientTag.setAttribute('id', circleId);
 
           const radialStop1 = document.createElementNS(ns, 'stop');
+          radialStop1.setAttribute('offset', '.3');
           radialStop1.setAttribute('stop-color', '#FA00FF');
 
           const radialStop2 = document.createElementNS(ns, 'stop');
           radialStop2.setAttribute('offset', '1');
           radialStop2.setAttribute('stop-opacity', '0');
-          radialStop2.setAttribute('stop-color', '#BD00FF');
+          radialStop2.setAttribute('stop-color', '#FA00FF');
 
           radialGradientTag.appendChild(radialStop1);
           radialGradientTag.appendChild(radialStop2);
 
-          // result
-          defsTagOfColor.appendChild(linearGradientTag);
-          defsTagOfColor.appendChild(radialGradientTag);
-          chart.appendChild(defsTagOfColor);
           return {
-            line: lineId,
-            circle: {
-              gradientId: circleId,
-              circleColor: circleColor,
-            },
+            border: linearGradientTag,
+            lastPoint: radialGradientTag,
+            legend: LegendGradientTag,
           };
         },
         width: 7,

@@ -12,12 +12,16 @@ var __assign = (this && this.__assign) || function () {
 var Chart = /** @class */ (function () {
     function Chart(data) {
         var _this = this;
+        var _a;
         this.svgNs = 'http://www.w3.org/2000/svg';
         this.padding = { bottom: 0, left: 0, top: 0, right: 0 };
         this.yAxisCount = 10;
         this.maxData = 0; // y축에서 표현되는 가장 큰 수
         this.minData = 0; // y축에서 표현되는 가장 작은 수
         this.defaultColor = '#fff';
+        /**
+         * Chart의 Padding(상하좌우)를 설정하는 함수
+         */
         this.setSVGPadding = function () {
             // 1. Y-Padding
             // find max y-label length
@@ -25,25 +29,31 @@ var Chart = /** @class */ (function () {
             // 2. X-Padding
             _this.padding = __assign(__assign({}, _this.padding), { 
                 // mix font-size and datas.length
-                bottom: _this.fontSize + _this.datas.length * 30, top: _this.fontSize + _this.datas.length * 30, left: (_this.fontSize +
+                bottom: _this.fontSize * 5, top: _this.fontSize * 5 + _this.datas.length * 25, left: (_this.fontSize +
                     Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10) *
                     2, right: _this.fontSize + Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10 });
         };
+        /**
+         * SVG 기본 값을 설정하는 함수
+         */
         this.setSVGElement = function () {
             // Make SVG Container
             _this.chart.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
             // Set ViewBox
             _this.chart.setAttribute('viewBox', "0 0 ".concat(_this.width, " ").concat(_this.hegiht));
         };
+        /**
+         * X축 Y축 선을 긋는 함수
+         */
         this.setAxis = function () {
             // 1. Create G Tag
-            var Axis = _this.createElement('g', [
+            var Axis = _this.createSvgElement('g', [
                 { property: 'class', value: 'axis' },
                 { property: 'stroke', value: '#fff' },
                 { property: 'stroke-width', value: '5' },
             ]);
             // 2. Draw X Axis
-            var xAxis = _this.createElement('line', [
+            var xAxis = _this.createSvgElement('line', [
                 { property: 'x1', value: _this.padding.left + '' },
                 { property: 'x2', value: _this.width - _this.padding.right + '' },
                 { property: 'y1', value: _this.hegiht - _this.padding.bottom + '' },
@@ -51,7 +61,7 @@ var Chart = /** @class */ (function () {
                 { property: 'class', value: 'axis__x' },
             ]);
             // 3. Draw Y Axis
-            var yAxis = _this.createElement('line', [
+            var yAxis = _this.createSvgElement('line', [
                 { property: 'x1', value: _this.padding.left + '' },
                 { property: 'x2', value: _this.padding.left + '' },
                 { property: 'y1', value: _this.padding.top + '' },
@@ -59,24 +69,30 @@ var Chart = /** @class */ (function () {
                 { property: 'class', value: 'axis__y' },
             ]);
             // insert To C
-            _this.appendToChart(_this.appendChilds(Axis, [xAxis, yAxis]));
+            _this.appendChilds(Axis, [xAxis, yAxis]);
+            _this.appendToChart(Axis);
         };
+        /**
+         * X, Y축의 라벨을 설정하는 함수
+         */
         this.setLabel = function () {
-            var gTagOfText = _this.createElement('g', [
+            var gTagOfText = _this.createSvgElement('g', [
                 { property: 'fill', value: '#fff' },
                 { property: 'font-size', value: _this.fontSize + 'px' },
                 { property: 'class', value: 'labels' },
                 { property: 'text-anchor', value: 'end' },
             ]);
-            var gTagOfXLabel = _this.createElement('g');
-            var gTagOfYLabel = _this.createElement('g');
+            var gTagOfXLabel = _this.createSvgElement('g');
+            var gTagOfYLabel = _this.createSvgElement('g', [
+                { property: 'dominant-baseline', value: 'central' },
+            ]);
             // xLabel
             _this.labels.map(function (label, i) {
                 var x = (i / (_this.xAxisCount - 1)) *
                     (_this.width - _this.padding.left - _this.padding.right) +
                     _this.padding.left;
                 var y = _this.hegiht - _this.padding.bottom + _this.fontSize * 2;
-                var text = _this.createElement('text', [
+                var text = _this.createSvgElement('text', [
                     { property: 'x', value: x + '' },
                     { property: 'y', value: y + '' },
                 ]);
@@ -93,7 +109,7 @@ var Chart = /** @class */ (function () {
                 var label = ((_this.yAxisCount - i) / _this.yAxisCount) *
                     (_this.maxData - _this.minData) +
                     _this.minData;
-                var text = _this.createElement('text', [
+                var text = _this.createSvgElement('text', [
                     { property: 'x', value: x + '' },
                     { property: 'y', value: y + '' },
                 ]);
@@ -101,10 +117,14 @@ var Chart = /** @class */ (function () {
                 gTagOfYLabel.appendChild(text);
             }
             // label box
-            _this.appendToChart(_this.appendChilds(gTagOfText, [gTagOfXLabel, gTagOfYLabel]));
+            _this.appendChilds(gTagOfText, [gTagOfXLabel, gTagOfYLabel]);
+            _this.appendToChart(gTagOfText);
         };
+        /**
+         * Chart의 가이드 라인을 그리는 함수
+         */
         this.setGuideLine = function () {
-            var gTagOfLine = _this.createElement('g', [
+            var gTagOfLine = _this.createSvgElement('g', [
                 { property: 'stroke', value: '#fff' },
                 { property: 'stroke-wight', value: '1' },
             ]);
@@ -114,7 +134,7 @@ var Chart = /** @class */ (function () {
                 var y = (_this.hegiht - _this.padding.bottom - _this.padding.top) *
                     (i / _this.yAxisCount) +
                     _this.padding.top;
-                var line = _this.createElement('line', [
+                var line = _this.createSvgElement('line', [
                     { property: 'x1', value: x1 + '' },
                     { property: 'x2', value: x2 + '' },
                     { property: 'y1', value: y + '' },
@@ -124,10 +144,12 @@ var Chart = /** @class */ (function () {
             }
             _this.appendToChart(gTagOfLine);
         };
+        /**
+         * Chart의 데이터 라인을 그리는 함수
+         */
         this.setPoints = function () {
-            var _a;
             // make g container
-            var gTagOfPolyLine = _this.createElement('g');
+            var gTagOfPolyLine = _this.createSvgElement('g');
             gTagOfPolyLine.classList.add('datas');
             var _loop_1 = function (i) {
                 var data = _this.datas[i];
@@ -144,16 +166,23 @@ var Chart = /** @class */ (function () {
                     return "".concat(x, ",").concat(y);
                 });
                 // set color
-                var customColor = (_a = data.customColor) === null || _a === void 0 ? void 0 : _a.call(data, _this.chart, _this.svgNs);
+                // let customColor = data.customColor().border;
+                var borderCustomColor = '';
+                if (data.customColor) {
+                    var customColorElement = data.customColor().border;
+                    if (customColorElement) {
+                        borderCustomColor = _this.setCustomColor(customColorElement);
+                    }
+                }
                 // draw polylines
-                var polyLine = _this.createElement('polyline', [
+                var polyLine = _this.createSvgElement('polyline', [
                     { property: 'points', value: pointList.join(' ') },
                     {
                         property: 'stroke',
                         value: (function () {
                             var color;
-                            if (customColor) {
-                                color = "url('#".concat(customColor.line, "')");
+                            if (borderCustomColor !== '') {
+                                color = "url('#".concat(borderCustomColor, "')");
                             }
                             else {
                                 color = data.color;
@@ -167,38 +196,49 @@ var Chart = /** @class */ (function () {
                     { property: 'stroke-linejoin', value: 'round' },
                 ]);
                 // draw last point circle
+                var lastPointCustomColor = '';
+                if (data.customColor) {
+                    var customColorElement = data.customColor().lastPoint;
+                    if (customColorElement) {
+                        lastPointCustomColor = _this.setCustomColor(customColorElement);
+                    }
+                }
                 // lase Circle에 사용될 좌표 값
-                var lastPoint = pointList
+                var lastPointPosition = pointList
                     .slice(-1)[0]
                     .split(',')
                     .map(function (point) { return Number(point); });
-                var gradient = _this.createElement('circle', [
-                    { property: 'cx', value: lastPoint[0] + '' },
-                    { property: 'cy', value: lastPoint[1] + '' },
+                // Gradient
+                var lastPoint = _this.createSvgElement('circle', [
+                    { property: 'cx', value: lastPointPosition[0] + '' },
+                    { property: 'cy', value: lastPointPosition[1] + '' },
                     { property: 'r', value: '30' },
                     {
                         property: 'fill',
                         value: (function () {
                             var color;
-                            if (customColor && customColor.circle) {
-                                color = "url('#".concat(customColor.circle.gradientId, "')");
+                            if (lastPointCustomColor !== '') {
+                                color = "url('#".concat(lastPointCustomColor, "')");
                             }
                             else {
                                 var circleId = Math.random().toString(16).slice(2) + '-lastpoint';
-                                var defTag = _this.createElement('defs');
-                                var radialGradientTag = _this.createElement('radialGradient', [
+                                var radialGradientTag = _this.createSvgElement('radialGradient', [
                                     {
                                         property: 'id',
                                         value: circleId,
                                     },
                                 ]);
-                                var radialStop1 = _this.createElement('stop', [
+                                var radialStop1 = _this.createSvgElement('stop', [
                                     {
                                         property: 'stop-color',
                                         value: data.color === undefined ? _this.defaultColor : data.color,
                                     },
+                                    {
+                                        property: 'offset',
+                                        value: '.3',
+                                    },
                                 ]);
-                                var radialStop2 = _this.createElement('stop', [
+                                var radialStop2 = _this.createSvgElement('stop', [
                                     { property: 'offset', value: '1' },
                                     { property: 'stop-opacity', value: '0' },
                                     {
@@ -208,34 +248,14 @@ var Chart = /** @class */ (function () {
                                 ]);
                                 radialGradientTag.appendChild(radialStop1);
                                 radialGradientTag.appendChild(radialStop2);
-                                _this.appendChilds(defTag, [radialGradientTag]);
-                                _this.appendToChart(defTag);
+                                _this.appendChilds(_this.customColorDefs, [radialGradientTag]);
                                 color = "url('#".concat(circleId, "')");
-                            }
-                            return color;
-                        })(),
-                    },
-                ]);
-                _this.appendChilds(gTagOfPolyLine, [gradient]);
-                var circle = _this.createElement('circle', [
-                    { property: 'cx', value: lastPoint[0] + '' },
-                    { property: 'cy', value: lastPoint[1] + '' },
-                    { property: 'r', value: '10' },
-                    {
-                        property: 'fill',
-                        value: (function () {
-                            var color;
-                            if (customColor && customColor.circle) {
-                                color = customColor.circle.circleColor;
-                            }
-                            else {
-                                color = data.color;
                             }
                             return color === undefined ? _this.defaultColor : color;
                         })(),
                     },
                 ]);
-                _this.appendChilds(gTagOfPolyLine, [polyLine, circle]);
+                _this.appendChilds(gTagOfPolyLine, [polyLine, lastPoint]);
             };
             // set line
             for (var i = 0; i < _this.datas.length; i++) {
@@ -243,9 +263,81 @@ var Chart = /** @class */ (function () {
             }
             _this.appendToChart(gTagOfPolyLine);
         };
-        // rendering for chart
+        /**
+         * Chart의 Legend를 설정하는 함수
+         */
+        this.setLegend = function () {
+            var legendHeight = 25;
+            var lineWidth = 22;
+            var gap = 8;
+            var fontSize = 12;
+            var gTagOfLegend = _this.createSvgElement('g', [
+                { property: 'class', value: "legend" },
+            ]);
+            var _loop_2 = function (i) {
+                var data = _this.datas[i];
+                var x = _this.width - _this.padding.right;
+                var y = _this.padding.top - _this.padding.bottom / 2 - i * legendHeight;
+                var text = _this.createSvgElement('text', [
+                    { property: 'font-size', value: "".concat(fontSize) },
+                    { property: 'fill', value: "#fff" },
+                    { property: 'stroke-width', value: "3" },
+                    { property: 'text-anchor', value: "end" },
+                    { property: 'x', value: "".concat(x) },
+                    { property: 'y', value: "".concat(y) },
+                    { property: 'dominant-baseline', value: 'middle' },
+                ]);
+                text.append(data.label);
+                // let customColor = data.customColor?.(this.chart, this.svgNs);
+                var bbox = _this.getBBox(text);
+                console.log(bbox);
+                var textLength = bbox.width;
+                // set color
+                var legendCustomColor = '';
+                if (data.customColor) {
+                    var customColorElement = data.customColor().legend;
+                    if (customColorElement) {
+                        legendCustomColor = _this.setCustomColor(customColorElement, {
+                            x1: "".concat(x - gap - lineWidth - textLength),
+                            x2: "".concat(x - gap - textLength),
+                            y1: "".concat(y),
+                            y2: "".concat(y),
+                        }, 'userSpaceOnUse');
+                    }
+                }
+                var line = _this.createSvgElement('line', [
+                    { property: 'x1', value: "".concat(x - gap - lineWidth - textLength) },
+                    { property: 'y1', value: "".concat(y) },
+                    { property: 'x2', value: "".concat(x - gap - textLength) },
+                    { property: 'y2', value: "".concat(y) },
+                    {
+                        property: 'stroke',
+                        value: (function () {
+                            var color;
+                            if (legendCustomColor !== '') {
+                                color = "url('#".concat(legendCustomColor, "')");
+                            }
+                            else {
+                                color = data.color;
+                            }
+                            return color === undefined ? _this.defaultColor : color;
+                        })(),
+                    },
+                    { property: 'stroke-width', value: "3px" },
+                    { property: 'stroke-linecap', value: 'round' },
+                    { property: 'stroke-linejoin', value: 'round' },
+                ]);
+                _this.appendChilds(gTagOfLegend, [text, line]);
+            };
+            for (var i = 0; i < _this.datas.length; i++) {
+                _loop_2(i);
+            }
+            _this.appendToChart(gTagOfLegend);
+        };
+        /**
+         * Chart를 그리는 함수
+         */
         this.render = function () {
-            var _a;
             // 컨테이너 크기 및 Axios 구축
             // Make SVG Container
             _this.setSVGElement();
@@ -257,12 +349,13 @@ var Chart = /** @class */ (function () {
             _this.setPoints();
             // Draw X and Y Axis
             _this.setAxis();
-            // Draw Label
+            // Draw X and Y Label
             _this.setLabel();
-            (_a = document.getElementById(_this.targetId)) === null || _a === void 0 ? void 0 : _a.appendChild(_this.chart);
+            // Draw Legend
+            _this.setLegend();
         };
         var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels;
-        this.chart = this.createElement('svg');
+        this.chart = this.createSvgElement('svg');
         this.targetId = targetId;
         this.width = size.width;
         this.hegiht = size.height;
@@ -272,23 +365,98 @@ var Chart = /** @class */ (function () {
         this.xAxisCount = labels.length;
         this.maxData = Math.max.apply(Math, datas.map(function (data) { return data.max; }));
         this.minData = Math.min.apply(Math, datas.map(function (data) { return data.min; }));
+        this.customColorDefs = this.createSvgElement('defs', [
+            { property: 'class', value: 'customColor' },
+        ]);
+        this.appendToChart(this.customColorDefs);
+        (_a = this.getTarget()) === null || _a === void 0 ? void 0 : _a.appendChild(this.chart);
     }
+    /**
+     * SVG 태그가 생성되는 부모 태그를 구하는 함수
+     * @returns {HTMLElement} SVG 태그가 생성되는 부모 태그 반환
+     */
+    Chart.prototype.getTarget = function () {
+        return document.getElementById(this.targetId);
+    };
+    /**
+     * Svg Element의 좌표(x, y) 및 크기(width, height)을 구하는 함수
+     * @param {SVGSVGElement} element DOM Rect 정보를 확인할 SVGSVGElement
+     * @returns {DOMRect} SVG Element의 위치 및 크기 값
+     */
+    Chart.prototype.getBBox = function (element) {
+        this.appendToChart(element);
+        return element.getBBox();
+    };
+    /**
+     * Element의 속성들을 지정하는 함수
+     * @param {SVGSVGElement} element 속성을 지정할 Element 매개변수
+     * @param {AttributeType[]} attributes 지정될 속성들인 매개변수 [{ property: string, value: string }]
+     */
     Chart.prototype.setAttributes = function (element, attributes) {
         attributes.forEach(function (attribute) {
             element.setAttribute(attribute.property, attribute.value);
         });
     };
-    Chart.prototype.createElement = function (tag, attributes) {
-        var newTag = document.createElementNS(this.svgNs, tag);
+    /**
+     * 사용자가 따로 지정한 Color(Gradient 등)를 지정하는 함수
+     * @param colorSvgElement
+     * @param position
+     * @returns {string} Defs에 지정된 Color ID 값
+     */
+    Chart.prototype.setCustomColor = function (colorSvgElement, position, gradientUnits) {
+        if (position === void 0) { position = {
+            x1: '',
+            y1: '',
+            x2: '',
+            y2: '',
+        }; }
+        if (gradientUnits === void 0) { gradientUnits = 'objectBoundingBox'; }
+        var randomId = 'flowbitChart' + Math.random().toString(16);
+        if (gradientUnits === 'userSpaceOnUse') {
+            this.setAttributes(colorSvgElement, [
+                { property: 'gradientUnits', value: gradientUnits },
+                { property: 'id', value: randomId },
+                { property: 'x1', value: position.x1 },
+                { property: 'x2', value: position.x2 },
+                { property: 'y1', value: position.y1 },
+                { property: 'y2', value: position.y2 },
+            ]);
+        }
+        else {
+            this.setAttributes(colorSvgElement, [
+                { property: 'gradientUnits', value: gradientUnits },
+                { property: 'id', value: randomId },
+            ]);
+        }
+        this.customColorDefs.append(colorSvgElement);
+        return randomId;
+    };
+    /**
+     * SVG Element을 생성하는 함수
+     * @param {string} svgTag 생성할 SVG Tag 이름인 매개변수
+     * @param {AttributeType[]} attributes 만들어진 SVG Tag에 적용될 속성들인 매개변수 [{ property: string, value: string }]
+     * @returns {SVGSVGElement} 생성된 SVG Tag를 반환
+     */
+    Chart.prototype.createSvgElement = function (svgTag, attributes) {
+        var newTag = document.createElementNS(this.svgNs, svgTag);
         if (attributes !== undefined) {
             this.setAttributes(newTag, attributes);
         }
         return newTag;
     };
-    Chart.prototype.appendChilds = function (element, childs) {
-        childs.forEach(function (child) { return element.appendChild(child); });
-        return element;
+    /**
+     * 부모 Element에 자식 Element들을 추가하는 함수
+     * @param {SVGSVGElement | Element} parent 부노
+     * @param {SVGSVGElement[] | Element[]} childs
+     * @returns
+     */
+    Chart.prototype.appendChilds = function (parent, childs) {
+        childs.forEach(function (child) { return parent.appendChild(child); });
     };
+    /**
+     * Chart에 자식 Element를 추가하는 함수
+     * @param {SVGSVGElement | Element} child Chart에 추가할 Element
+     */
     Chart.prototype.appendToChart = function (child) {
         this.chart.appendChild(child);
     };
