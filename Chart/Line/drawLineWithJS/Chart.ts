@@ -316,7 +316,7 @@ class Chart {
         { property: 'y', value: y + '' },
       ]);
 
-      text.append(label + '');
+      text.append(Math.floor(label) + '');
 
       gTagOfYLabel.appendChild(text);
     }
