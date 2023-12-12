@@ -290,7 +290,6 @@ var Chart = /** @class */ (function () {
                 text.append(data.label);
                 // let customColor = data.customColor?.(this.chart, this.svgNs);
                 var bbox = _this.getBBox(text);
-                console.log(bbox);
                 var textLength = bbox.width;
                 // set color
                 var legendCustomColor = '';
@@ -351,7 +350,7 @@ var Chart = /** @class */ (function () {
             _this.setAxis();
             // Draw X and Y Label
             _this.setLabel();
-            // Draw Legend
+            // // Draw Legend
             _this.setLegend();
         };
         var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels;

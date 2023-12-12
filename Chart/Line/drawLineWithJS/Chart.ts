@@ -1,4 +1,4 @@
-interface ChartType {
+export interface ChartType {
   targetId: string;
   size: {
     width: number;
@@ -9,7 +9,7 @@ interface ChartType {
   labels: string[];
 }
 
-interface ChartDataType {
+export interface ChartDataType {
   // 데이터들의 라벨
   label: string;
   // 데이터 리스트
@@ -20,9 +20,9 @@ interface ChartDataType {
   max: number;
   // 사용자 지정 색깔
   customColor?: () => {
-    border?: HTMLElement;
-    legend?: HTMLElement;
-    lastPoint?: HTMLElement;
+    border?: HTMLElement | Element;
+    legend?: HTMLElement | Element;
+    lastPoint?: HTMLElement | Element;
   };
   // 기본 color
   color?: string;
@@ -36,8 +36,6 @@ interface ChartPaddingType {
   right: number;
   top: number;
 }
-
-type SvgInHtml = HTMLElement & SVGElement;
 
 interface AttributeType {
   property: string;
@@ -281,6 +279,7 @@ class Chart {
     ]);
 
     // xLabel
+    // eslint-disable-next-line array-callback-return
     this.labels.map((label, i) => {
       let x =
         (i / (this.xAxisCount - 1)) *
@@ -521,7 +520,6 @@ class Chart {
 
       // let customColor = data.customColor?.(this.chart, this.svgNs);
       const bbox = this.getBBox(text);
-      console.log(bbox);
       const textLength = bbox.width;
 
       // set color
@@ -595,3 +593,5 @@ class Chart {
     this.setLegend();
   };
 }
+
+export default Chart;
