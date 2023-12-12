@@ -273,7 +273,9 @@ class Chart {
       { property: 'class', value: 'labels' },
       { property: 'text-anchor', value: 'end' },
     ]);
-    const gTagOfXLabel = this.createSvgElement('g');
+    const gTagOfXLabel = this.createSvgElement('g', [
+      { property: 'text-anchor', value: 'middle' },
+    ]);
     const gTagOfYLabel = this.createSvgElement('g', [
       { property: 'dominant-baseline', value: 'central' },
     ]);
@@ -332,10 +334,12 @@ class Chart {
    */
   private setGuideLine = () => {
     const gTagOfLine = this.createSvgElement('g', [
-      { property: 'stroke', value: '#fff' },
-      { property: 'stroke-wight', value: '1' },
+      { property: 'class', value: 'guideLine' },
+      { property: 'stroke', value: '#797979' },
+      { property: 'stroke-width', value: '0.5px' },
     ]);
 
+    // x축 가이드 라인
     for (let i = 0; i <= this.yAxisCount; i++) {
       const x1 = this.padding.left;
       const x2 = this.width - this.padding.right;
@@ -354,6 +358,25 @@ class Chart {
       gTagOfLine.appendChild(line);
     }
 
+    // y축 가이드 라인
+    for (let i = 0; i <= this.xAxisCount; i++) {
+      const x =
+        (i / this.xAxisCount) *
+          (this.width - this.padding.left - this.padding.right) +
+        this.padding.left;
+      const y1 = this.hegiht - this.padding.bottom;
+      const y2 = this.padding.top;
+
+      const line = this.createSvgElement('line', [
+        { property: 'x1', value: x + '' },
+        { property: 'x2', value: x + '' },
+        { property: 'y1', value: y1 + '' },
+        { property: 'y2', value: y2 + '' },
+      ]);
+
+      gTagOfLine.appendChild(line);
+    }
+
     this.appendToChart(gTagOfLine);
   };
 
@@ -364,13 +387,12 @@ class Chart {
     // make g container
     const gTagOfPolyLine = this.createSvgElement('g');
     gTagOfPolyLine.classList.add('datas');
-
     // set line
     for (let i = 0; i < this.datas.length; i++) {
       const data = this.datas[i];
       let pointList = data.data.map((value, j) => {
         let x =
-          (j / (this.xAxisCount - 1)) *
+          (j / this.datas[0].data.length) *
             (this.width - this.padding.left - this.padding.right) +
           this.padding.left;
         let y =
@@ -494,9 +516,9 @@ class Chart {
    */
   private setLegend = () => {
     const legendHeight = 25;
-    const lineWidth = 22;
+    const lineWidth = 28;
     const gap = 8;
-    const fontSize = 12;
+    const fontSize = 14;
 
     const gTagOfLegend = this.createSvgElement('g', [
       { property: 'class', value: `legend` },
@@ -510,7 +532,6 @@ class Chart {
       const text = this.createSvgElement('text', [
         { property: 'font-size', value: `${fontSize}` },
         { property: 'fill', value: `#fff` },
-        { property: 'stroke-width', value: `3` },
         { property: 'text-anchor', value: `end` },
         { property: 'x', value: `${x}` },
         { property: 'y', value: `${y}` },
@@ -557,7 +578,7 @@ class Chart {
             return color === undefined ? this.defaultColor : color;
           })(),
         },
-        { property: 'stroke-width', value: `3px` },
+        { property: 'stroke-width', value: `4px` },
         { property: 'stroke-linecap', value: 'round' },
         { property: 'stroke-linejoin', value: 'round' },
       ]);
