@@ -23,15 +23,11 @@ var Chart = /** @class */ (function () {
          * Chart의 Padding(상하좌우)를 설정하는 함수
          */
         this.setSVGPadding = function () {
-            // 1. Y-Padding
-            // find max y-label length
-            // mix font-size and y-label length
-            // 2. X-Padding
+            var textLength = _this.getTextLength(_this.maxData + '');
+            var fixedLeftPadding = 50; // 고정적으로 왼쪽 패딩 값에 넣을 값
             _this.padding = __assign(__assign({}, _this.padding), { 
                 // mix font-size and datas.length
-                bottom: _this.fontSize * 5, top: _this.fontSize * 5 + _this.datas.length * 25, left: (_this.fontSize +
-                    Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10) *
-                    2, right: _this.fontSize + Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 10 });
+                bottom: _this.fontSize * 5, top: _this.fontSize * 5 + _this.datas.length * 25, left: textLength + fixedLeftPadding, right: textLength });
         };
         /**
          * SVG 기본 값을 설정하는 함수
@@ -110,6 +106,7 @@ var Chart = /** @class */ (function () {
                 // 라벨 텍스트 길이 생성
                 var text = _this.createSvgElement('text');
                 text.append(Math.floor(label) + '');
+                var textLength = _this.getBBox(text).width;
                 // X축 좌표 생성
                 var gapFromAxiosAndLabel = 20;
                 var x = _this.padding.left - gapFromAxiosAndLabel;
@@ -403,6 +400,16 @@ var Chart = /** @class */ (function () {
      */
     Chart.prototype.getTarget = function () {
         return document.getElementById(this.targetId);
+    };
+    /**
+     * SVG 태그에 생성되는 문자의 길이를 구하는 함수
+     * @param {string} text 길이를 조회할 문자
+     * @returns {number} 문자의 길이 값
+     */
+    Chart.prototype.getTextLength = function (text) {
+        var element = this.createSvgElement('text');
+        element.append(text);
+        return this.getBBox(element).width;
     };
     /**
      * Svg Element의 좌표(x, y) 및 크기(width, height)을 구하는 함수
