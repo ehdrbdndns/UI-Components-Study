@@ -89,8 +89,7 @@ var Chart = /** @class */ (function () {
                 { property: 'dominant-baseline', value: 'central' },
             ]);
             // xLabel
-            // eslint-disable-next-line array-callback-return
-            _this.labels.map(function (label, i) {
+            _this.labels.forEach(function (label, i) {
                 var x = (i / (_this.xAxisCount - 1)) *
                     (_this.width - _this.padding.left - _this.padding.right) +
                     _this.padding.left;

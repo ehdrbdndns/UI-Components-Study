@@ -281,8 +281,7 @@ class Chart {
     ]);
 
     // xLabel
-    // eslint-disable-next-line array-callback-return
-    this.labels.map((label, i) => {
+    this.labels.forEach((label, i) => {
       let x =
         (i / (this.xAxisCount - 1)) *
           (this.width - this.padding.left - this.padding.right) +
