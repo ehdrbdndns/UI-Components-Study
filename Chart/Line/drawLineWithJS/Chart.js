@@ -1,3 +1,4 @@
+"use strict";
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -9,6 +10,7 @@ var __assign = (this && this.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 var Chart = /** @class */ (function () {
     function Chart(data) {
         var _this = this;
@@ -82,11 +84,14 @@ var Chart = /** @class */ (function () {
                 { property: 'class', value: 'labels' },
                 { property: 'text-anchor', value: 'end' },
             ]);
-            var gTagOfXLabel = _this.createSvgElement('g');
+            var gTagOfXLabel = _this.createSvgElement('g', [
+                { property: 'text-anchor', value: 'middle' },
+            ]);
             var gTagOfYLabel = _this.createSvgElement('g', [
                 { property: 'dominant-baseline', value: 'central' },
             ]);
             // xLabel
+            // eslint-disable-next-line array-callback-return
             _this.labels.map(function (label, i) {
                 var x = (i / (_this.xAxisCount - 1)) *
                     (_this.width - _this.padding.left - _this.padding.right) +
@@ -113,7 +118,7 @@ var Chart = /** @class */ (function () {
                     { property: 'x', value: x + '' },
                     { property: 'y', value: y + '' },
                 ]);
-                text.append(label + '');
+                text.append(Math.floor(label) + '');
                 gTagOfYLabel.appendChild(text);
             }
             // label box
@@ -125,9 +130,11 @@ var Chart = /** @class */ (function () {
          */
         this.setGuideLine = function () {
             var gTagOfLine = _this.createSvgElement('g', [
-                { property: 'stroke', value: '#fff' },
-                { property: 'stroke-wight', value: '1' },
+                { property: 'class', value: 'guideLine' },
+                { property: 'stroke', value: '#797979' },
+                { property: 'stroke-width', value: '0.5px' },
             ]);
+            // x축 가이드 라인
             for (var i = 0; i <= _this.yAxisCount; i++) {
                 var x1 = _this.padding.left;
                 var x2 = _this.width - _this.padding.right;
@@ -139,6 +146,21 @@ var Chart = /** @class */ (function () {
                     { property: 'x2', value: x2 + '' },
                     { property: 'y1', value: y + '' },
                     { property: 'y2', value: y + '' },
+                ]);
+                gTagOfLine.appendChild(line);
+            }
+            // y축 가이드 라인
+            for (var i = 0; i <= _this.xAxisCount - 1; i++) {
+                var x = (i / (_this.xAxisCount - 1)) *
+                    (_this.width - _this.padding.left - _this.padding.right) +
+                    _this.padding.left;
+                var y1 = _this.hegiht - _this.padding.bottom;
+                var y2 = _this.padding.top;
+                var line = _this.createSvgElement('line', [
+                    { property: 'x1', value: x + '' },
+                    { property: 'x2', value: x + '' },
+                    { property: 'y1', value: y1 + '' },
+                    { property: 'y2', value: y2 + '' },
                 ]);
                 gTagOfLine.appendChild(line);
             }
@@ -154,7 +176,7 @@ var Chart = /** @class */ (function () {
             var _loop_1 = function (i) {
                 var data = _this.datas[i];
                 var pointList = data.data.map(function (value, j) {
-                    var x = (j / (_this.xAxisCount - 1)) *
+                    var x = (j / _this.datas[0].data.length) *
                         (_this.width - _this.padding.left - _this.padding.right) +
                         _this.padding.left;
                     var y = _this.hegiht -
@@ -268,9 +290,9 @@ var Chart = /** @class */ (function () {
          */
         this.setLegend = function () {
             var legendHeight = 25;
-            var lineWidth = 22;
+            var lineWidth = 28;
             var gap = 8;
-            var fontSize = 12;
+            var fontSize = 14;
             var gTagOfLegend = _this.createSvgElement('g', [
                 { property: 'class', value: "legend" },
             ]);
@@ -281,7 +303,6 @@ var Chart = /** @class */ (function () {
                 var text = _this.createSvgElement('text', [
                     { property: 'font-size', value: "".concat(fontSize) },
                     { property: 'fill', value: "#fff" },
-                    { property: 'stroke-width', value: "3" },
                     { property: 'text-anchor', value: "end" },
                     { property: 'x', value: "".concat(x) },
                     { property: 'y', value: "".concat(y) },
@@ -322,7 +343,7 @@ var Chart = /** @class */ (function () {
                             return color === undefined ? _this.defaultColor : color;
                         })(),
                     },
-                    { property: 'stroke-width', value: "3px" },
+                    { property: 'stroke-width', value: "4px" },
                     { property: 'stroke-linecap', value: 'round' },
                     { property: 'stroke-linejoin', value: 'round' },
                 ]);
@@ -350,7 +371,7 @@ var Chart = /** @class */ (function () {
             _this.setAxis();
             // Draw X and Y Label
             _this.setLabel();
-            // // Draw Legend
+            // Draw Legend
             _this.setLegend();
         };
         var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels;
@@ -461,3 +482,4 @@ var Chart = /** @class */ (function () {
     };
     return Chart;
 }());
+exports.default = Chart;

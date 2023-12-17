@@ -359,9 +359,9 @@ class Chart {
     }
 
     // y축 가이드 라인
-    for (let i = 0; i <= this.xAxisCount; i++) {
+    for (let i = 0; i <= this.xAxisCount - 1; i++) {
       const x =
-        (i / this.xAxisCount) *
+        (i / (this.xAxisCount - 1)) *
           (this.width - this.padding.left - this.padding.right) +
         this.padding.left;
       const y1 = this.hegiht - this.padding.bottom;
