@@ -103,19 +103,28 @@ var Chart = /** @class */ (function () {
             });
             // yLabel
             for (var i = 0; i <= _this.yAxisCount; i++) {
-                var x = _this.padding.left -
-                    Math.ceil(Math.log(_this.maxData + 1) / Math.LN10) * 3;
-                var y = (_this.hegiht - _this.padding.bottom - _this.padding.top) *
-                    (i / _this.yAxisCount) +
-                    _this.padding.top;
+                // 라벨 문자 생성
                 var label = ((_this.yAxisCount - i) / _this.yAxisCount) *
                     (_this.maxData - _this.minData) +
                     _this.minData;
-                var text = _this.createSvgElement('text', [
+                // 라벨 텍스트 길이 생성
+                var text = _this.createSvgElement('text');
+                text.append(Math.floor(label) + '');
+                // X축 좌표 생성
+                var gapFromAxiosAndLabel = 20;
+                var x = _this.padding.left - gapFromAxiosAndLabel;
+                // Y축 좌표 생성
+                var y = (_this.hegiht - _this.padding.bottom - _this.padding.top) *
+                    (i / _this.yAxisCount) +
+                    _this.padding.top;
+                _this.setAttributes(text, [
                     { property: 'x', value: x + '' },
                     { property: 'y', value: y + '' },
                 ]);
-                text.append(Math.floor(label) + '');
+                // const text = this.createSvgElement('text', [
+                //   { property: 'x', value: x + '' },
+                //   { property: 'y', value: y + '' },
+                // ]);
                 gTagOfYLabel.appendChild(text);
             }
             // label box

@@ -300,24 +300,35 @@ class Chart {
 
     // yLabel
     for (let i = 0; i <= this.yAxisCount; i++) {
-      let x =
-        this.padding.left -
-        Math.ceil(Math.log(this.maxData + 1) / Math.LN10) * 3;
-      let y =
-        (this.hegiht - this.padding.bottom - this.padding.top) *
-          (i / this.yAxisCount) +
-        this.padding.top;
+      // 라벨 문자 생성
       let label =
         ((this.yAxisCount - i) / this.yAxisCount) *
           (this.maxData - this.minData) +
         this.minData;
 
-      const text = this.createSvgElement('text', [
+      // 라벨 텍스트 길이 생성
+      const text = this.createSvgElement('text');
+      text.append(Math.floor(label) + '');
+
+      // X축 좌표 생성
+      const gapFromAxiosAndLabel = 20;
+      let x = this.padding.left - gapFromAxiosAndLabel;
+
+      // Y축 좌표 생성
+      let y =
+        (this.hegiht - this.padding.bottom - this.padding.top) *
+          (i / this.yAxisCount) +
+        this.padding.top;
+
+      this.setAttributes(text, [
         { property: 'x', value: x + '' },
         { property: 'y', value: y + '' },
       ]);
 
-      text.append(Math.floor(label) + '');
+      // const text = this.createSvgElement('text', [
+      //   { property: 'x', value: x + '' },
+      //   { property: 'y', value: y + '' },
+      // ]);
 
       gTagOfYLabel.appendChild(text);
     }
