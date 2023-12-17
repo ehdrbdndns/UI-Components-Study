@@ -95,6 +95,17 @@ class Chart {
   }
 
   /**
+   * SVG 태그에 생성되는 문자의 길이를 구하는 함수
+   * @param {string} text 길이를 조회할 문자
+   * @returns {number} 문자의 길이 값
+   */
+  private getTextLength(text: string) {
+    const element = this.createSvgElement('text');
+    element.append(text);
+    return this.getBBox(element).width;
+  }
+
+  /**
    * Svg Element의 좌표(x, y) 및 크기(width, height)을 구하는 함수
    * @param {SVGSVGElement} element DOM Rect 정보를 확인할 SVGSVGElement
    * @returns {DOMRect} SVG Element의 위치 및 크기 값
@@ -201,21 +212,16 @@ class Chart {
    * Chart의 Padding(상하좌우)를 설정하는 함수
    */
   private setSVGPadding = () => {
-    // 1. Y-Padding
-    // find max y-label length
-    // mix font-size and y-label length
-    // 2. X-Padding
+    const textLength = this.getTextLength(this.maxData + '');
+    const fixedLeftPadding = 50; // 고정적으로 왼쪽 패딩 값에 넣을 값
+
     this.padding = {
       ...this.padding,
       // mix font-size and datas.length
       bottom: this.fontSize * 5,
       top: this.fontSize * 5 + this.datas.length * 25,
-      left:
-        (this.fontSize +
-          Math.ceil(Math.log(this.maxData + 1) / Math.LN10) * 10) *
-        2,
-      right:
-        this.fontSize + Math.ceil(Math.log(this.maxData + 1) / Math.LN10) * 10,
+      left: textLength + fixedLeftPadding,
+      right: textLength,
     };
   };
 
@@ -309,6 +315,7 @@ class Chart {
       // 라벨 텍스트 길이 생성
       const text = this.createSvgElement('text');
       text.append(Math.floor(label) + '');
+      const textLength = this.getBBox(text).width;
 
       // X축 좌표 생성
       const gapFromAxiosAndLabel = 20;
