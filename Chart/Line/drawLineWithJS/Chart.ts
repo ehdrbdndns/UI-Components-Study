@@ -1,4 +1,4 @@
-export interface ChartType {
+interface ChartType {
   targetId: string;
   size: {
     width: number;
@@ -9,7 +9,7 @@ export interface ChartType {
   labels: string[];
 }
 
-export interface ChartDataType {
+interface ChartDataType {
   // 데이터들의 라벨
   label: string;
   // 데이터 리스트
@@ -614,5 +614,3 @@ class Chart {
     this.setLegend();
   };
 }
-
-export default Chart;
