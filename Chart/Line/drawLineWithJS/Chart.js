@@ -24,10 +24,9 @@ var Chart = /** @class */ (function () {
          */
         this.setSVGPadding = function () {
             var textLength = _this.getTextLength(_this.maxData + '');
-            var fixedLeftPadding = 50; // 고정적으로 왼쪽 패딩 값에 넣을 값
             _this.padding = __assign(__assign({}, _this.padding), { 
                 // mix font-size and datas.length
-                bottom: _this.fontSize * 5, top: _this.fontSize * 5 + _this.datas.length * 25, left: textLength + fixedLeftPadding, right: textLength });
+                bottom: _this.fontSize * 5, top: _this.fontSize * 5 + _this.datas.length * 25, left: textLength * 2, right: textLength });
         };
         /**
          * SVG 기본 값을 설정하는 함수

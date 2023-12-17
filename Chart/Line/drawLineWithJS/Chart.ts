@@ -213,14 +213,13 @@ class Chart {
    */
   private setSVGPadding = () => {
     const textLength = this.getTextLength(this.maxData + '');
-    const fixedLeftPadding = 50; // 고정적으로 왼쪽 패딩 값에 넣을 값
 
     this.padding = {
       ...this.padding,
       // mix font-size and datas.length
       bottom: this.fontSize * 5,
       top: this.fontSize * 5 + this.datas.length * 25,
-      left: textLength + fixedLeftPadding,
+      left: textLength * 2,
       right: textLength,
     };
   };
