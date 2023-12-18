@@ -15,10 +15,11 @@ var Chart = /** @class */ (function () {
         var _a;
         this.svgNs = 'http://www.w3.org/2000/svg';
         this.padding = { bottom: 0, left: 0, top: 0, right: 0 };
-        this.yAxisCount = 10;
+        this.yAxisCount = 10; // y축에서 표현되는 라벨의 개수
         this.maxData = 0; // y축에서 표현되는 가장 큰 수
         this.minData = 0; // y축에서 표현되는 가장 작은 수
         this.defaultColor = '#fff';
+        this.zoom = false; // 줌인, 줌아웃 기능 추가 여부
         /**
          * Chart의 Padding(상하좌우)를 설정하는 함수
          */
@@ -32,7 +33,7 @@ var Chart = /** @class */ (function () {
          * SVG 기본 값을 설정하는 함수
          */
         this.setSVGElement = function () {
-            // Make SVG Container
+            // Create SVG Container
             _this.chart.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
             // Set ViewBox
             _this.chart.setAttribute('viewBox', "0 0 ".concat(_this.width, " ").concat(_this.hegiht));
@@ -46,6 +47,7 @@ var Chart = /** @class */ (function () {
                 { property: 'class', value: 'axis' },
                 { property: 'stroke', value: '#fff' },
                 { property: 'stroke-width', value: '5' },
+                { property: 'id', value: 'flowbit_axios' },
             ]);
             // 2. Draw X Axis
             var xAxis = _this.createSvgElement('line', [
@@ -152,20 +154,21 @@ var Chart = /** @class */ (function () {
                 gTagOfLine.appendChild(line);
             }
             // y축 가이드 라인
-            for (var i = 0; i <= _this.xAxisCount - 1; i++) {
-                var x = (i / (_this.xAxisCount - 1)) *
-                    (_this.width - _this.padding.left - _this.padding.right) +
-                    _this.padding.left;
-                var y1 = _this.hegiht - _this.padding.bottom;
-                var y2 = _this.padding.top;
-                var line = _this.createSvgElement('line', [
-                    { property: 'x1', value: x + '' },
-                    { property: 'x2', value: x + '' },
-                    { property: 'y1', value: y1 + '' },
-                    { property: 'y2', value: y2 + '' },
-                ]);
-                gTagOfLine.appendChild(line);
-            }
+            // for (let i = 0; i <= this.xAxisCount - 1; i++) {
+            //   const x =
+            //     (i / (this.xAxisCount - 1)) *
+            //       (this.width - this.padding.left - this.padding.right) +
+            //     this.padding.left;
+            //   const y1 = this.hegiht - this.padding.bottom;
+            //   const y2 = this.padding.top;
+            //   const line = this.createSvgElement('line', [
+            //     { property: 'x1', value: x + '' },
+            //     { property: 'x2', value: x + '' },
+            //     { property: 'y1', value: y1 + '' },
+            //     { property: 'y2', value: y2 + '' },
+            //   ]);
+            //   gTagOfLine.appendChild(line);
+            // }
             _this.appendToChart(gTagOfLine);
         };
         /**
@@ -173,27 +176,59 @@ var Chart = /** @class */ (function () {
          */
         this.setPoints = function () {
             // make g container
-            var gTagOfPolyLine = _this.createSvgElement('g');
+            var gTagOfPolyLine = _this.createSvgElement('g', [
+                { property: 'id', value: 'flowchart_datas' },
+            ]);
             gTagOfPolyLine.classList.add('datas');
             var _loop_1 = function (i) {
-                var data = _this.datas[i];
-                var pointList = data.data.map(function (value, j) {
-                    var x = (j / _this.datas[0].data.length) *
-                        (_this.width - _this.padding.left - _this.padding.right) +
-                        _this.padding.left;
-                    var y = _this.hegiht -
-                        _this.padding.top -
-                        _this.padding.bottom -
-                        (_this.hegiht - _this.padding.bottom - _this.padding.top) *
-                            ((value - _this.minData) / (_this.maxData - _this.minData)) +
-                        _this.padding.top;
-                    return "".concat(x, ",").concat(y);
-                });
+                // SET Poly Line
+                var _a = _this.datas[i], data = _a.data, customColor = _a.customColor, color = _a.color, width = _a.width;
+                var pointList = [];
+                if (_this.zoom) {
+                    // 줌인 줌아웃 기능 활성화한 버전
+                    // TODO 줌인 줌 아웃 기능
+                    // data.length를 차트에 보여줄 개수를 변수 처리
+                    // 배열의 끝에서부터 보여줄 개수만큼 보여주는데 만약 해당 차트가 최대 길이보다 작다면 그만큼 차감해서 보여줘야 함
+                    // J 변수에 차트 최대 길이가 적용되어야 하는데...
+                    // 데이터 배열을 끝에서부터 보여줘야 하기에 배열의 최대 길이에서 보여줄 개수만큼만 배열의 길이 끝에서부터 역순으로 보여줘야 함
+                    var diff = _this.maxChartDataCount - data.length;
+                    var count = 0;
+                    for (var j = data.length - _this.showDataCount + diff; j < data.length; j++) {
+                        var value = data[j];
+                        var x = (count / (_this.showDataCount - 1)) * // TODO data.data.length를 차트에 데이터를 보여줄 개수로 변수처리
+                            (_this.width - _this.padding.left - _this.padding.right) +
+                            _this.padding.left;
+                        var y = _this.hegiht -
+                            _this.padding.top -
+                            _this.padding.bottom -
+                            (_this.hegiht - _this.padding.bottom - _this.padding.top) *
+                                ((value - _this.minData) / (_this.maxData - _this.minData)) +
+                            _this.padding.top;
+                        pointList.push("".concat(x, ",").concat(y));
+                        count++;
+                    }
+                    // TODO END
+                }
+                else {
+                    // 줌인 줌아웃 기능 비활성화 버전
+                    pointList = data.map(function (value, j) {
+                        var x = (j / _this.datas[0].data.length) *
+                            (_this.width - _this.padding.left - _this.padding.right) +
+                            _this.padding.left;
+                        var y = _this.hegiht -
+                            _this.padding.top -
+                            _this.padding.bottom -
+                            (_this.hegiht - _this.padding.bottom - _this.padding.top) *
+                                ((value - _this.minData) / (_this.maxData - _this.minData)) +
+                            _this.padding.top;
+                        return "".concat(x, ",").concat(y);
+                    });
+                }
                 // set color
                 // let customColor = data.customColor().border;
                 var borderCustomColor = '';
-                if (data.customColor) {
-                    var customColorElement = data.customColor().border;
+                if (customColor) {
+                    var customColorElement = customColor().border;
                     if (customColorElement) {
                         borderCustomColor = _this.setCustomColor(customColorElement);
                     }
@@ -209,20 +244,20 @@ var Chart = /** @class */ (function () {
                                 color = "url('#".concat(borderCustomColor, "')");
                             }
                             else {
-                                color = data.color;
+                                color = color;
                             }
                             return color === undefined ? _this.defaultColor : color;
                         })(),
                     },
                     { property: 'fill', value: 'none' },
-                    { property: 'stroke-width', value: data.width + '' },
+                    { property: 'stroke-width', value: width + '' },
                     { property: 'stroke-linecap', value: 'round' },
                     { property: 'stroke-linejoin', value: 'round' },
                 ]);
-                // draw last point circle
+                // Draw last point circle
                 var lastPointCustomColor = '';
-                if (data.customColor) {
-                    var customColorElement = data.customColor().lastPoint;
+                if (customColor) {
+                    var customColorElement = customColor().lastPoint;
                     if (customColorElement) {
                         lastPointCustomColor = _this.setCustomColor(customColorElement);
                     }
@@ -232,7 +267,7 @@ var Chart = /** @class */ (function () {
                     .slice(-1)[0]
                     .split(',')
                     .map(function (point) { return Number(point); });
-                // Gradient
+                // Set LastPoint Gradient
                 var lastPoint = _this.createSvgElement('circle', [
                     { property: 'cx', value: lastPointPosition[0] + '' },
                     { property: 'cy', value: lastPointPosition[1] + '' },
@@ -255,7 +290,7 @@ var Chart = /** @class */ (function () {
                                 var radialStop1 = _this.createSvgElement('stop', [
                                     {
                                         property: 'stop-color',
-                                        value: data.color === undefined ? _this.defaultColor : data.color,
+                                        value: color === undefined ? _this.defaultColor : color,
                                     },
                                     {
                                         property: 'offset',
@@ -267,7 +302,7 @@ var Chart = /** @class */ (function () {
                                     { property: 'stop-opacity', value: '0' },
                                     {
                                         property: 'stop-color',
-                                        value: data.color === undefined ? _this.defaultColor : data.color,
+                                        value: color === undefined ? _this.defaultColor : color,
                                     },
                                 ]);
                                 radialGradientTag.appendChild(radialStop1);
@@ -281,11 +316,49 @@ var Chart = /** @class */ (function () {
                 ]);
                 _this.appendChilds(gTagOfPolyLine, [polyLine, lastPoint]);
             };
-            // set line
             for (var i = 0; i < _this.datas.length; i++) {
                 _loop_1(i);
             }
+            // 데이터의 영역 설정(커서 표시)
+            var Area = _this.setArea({
+                x: _this.padding.left + '',
+                y: _this.padding.top + '',
+                width: _this.width - _this.padding.right - _this.padding.left + '',
+                height: _this.hegiht - _this.padding.top - _this.padding.bottom + '',
+            });
+            Area.style.cursor =
+                'url("https://www.bithumb.com/react/charting_library/sta…es/crosshair.6c091f7d5427d0c5e6d9dc3a90eb2b20.cur"),crosshair';
+            _this.appendChilds(gTagOfPolyLine, [Area]);
             _this.appendToChart(gTagOfPolyLine);
+        };
+        /**
+         * Chart의 데이터 영역을 지정하는 함수
+         * 줌인 줌 아웃 등 여러 이벤트 영역에 필요한 범위를 설정함
+         */
+        /**
+         *
+         * @param {x: string, y: width: string, hegiht: string} param
+         * @returns SVGElement
+         */
+        this.setArea = function (_a) {
+            var x = _a.x, y = _a.y, width = _a.width, height = _a.height;
+            var Area = _this.createSvgElement('rect', [
+                { property: 'x', value: x },
+                { property: 'y', value: y },
+                {
+                    property: 'width',
+                    value: width,
+                },
+                {
+                    property: 'height',
+                    value: height,
+                },
+                {
+                    property: 'fill-opacity',
+                    value: '0',
+                },
+            ]);
+            return Area;
         };
         /**
          * Chart의 Legend를 설정하는 함수
@@ -357,6 +430,36 @@ var Chart = /** @class */ (function () {
             _this.appendToChart(gTagOfLegend);
         };
         /**
+         * Chart의 Zoom 기능을 설정하는 함수
+         */
+        this.setZoomAction = function () {
+            _this.chart.addEventListener('mousewheel', function (e) {
+                var _a, _b;
+                e.preventDefault();
+                if (e.deltaY > 0) {
+                    // Scroll Down
+                    if (_this.showDataCount > 4)
+                        _this.showDataCount -= 3;
+                }
+                else {
+                    // Scroll Up
+                    if (_this.showDataCount < _this.maxChartDataCount - 3)
+                        _this.showDataCount += 3;
+                }
+                (_a = document.getElementById('flowchart_datas')) === null || _a === void 0 ? void 0 : _a.remove();
+                (_b = document.getElementById('flowbit_axios')) === null || _b === void 0 ? void 0 : _b.remove();
+                _this.setPoints();
+                _this.setAxis();
+            });
+        };
+        /**
+         * Chart의 Interaction 기능을 설정하는 함수
+         */
+        this.setInteraction = function () {
+            if (_this.zoom)
+                _this.setZoomAction();
+        };
+        /**
          * Chart를 그리는 함수
          */
         this.render = function () {
@@ -365,8 +468,8 @@ var Chart = /** @class */ (function () {
             _this.setSVGElement();
             // 1. Set Padding
             _this.setSVGPadding();
-            // Draw GuideLine
-            _this.setGuideLine();
+            // // Draw GuideLine
+            // this.setGuideLine();
             // 데이터 구축
             _this.setPoints();
             // Draw X and Y Axis
@@ -375,9 +478,15 @@ var Chart = /** @class */ (function () {
             _this.setLabel();
             // Draw Legend
             _this.setLegend();
+            // Draw GuideLine
+            _this.setGuideLine();
+            // Set Interaction
+            _this.setInteraction();
         };
-        var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels;
-        this.chart = this.createSvgElement('svg');
+        var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels, _b = data.zoom, zoom = _b === void 0 ? false : _b, showDataCount = data.showDataCount;
+        this.chart = this.createSvgElement('svg', [
+            { property: 'id', value: 'flowbit_svg' },
+        ]);
         this.targetId = targetId;
         this.width = size.width;
         this.hegiht = size.height;
@@ -387,9 +496,22 @@ var Chart = /** @class */ (function () {
         this.xAxisCount = labels.length;
         this.maxData = Math.max.apply(Math, datas.map(function (data) { return data.max; }));
         this.minData = Math.min.apply(Math, datas.map(function (data) { return data.min; }));
+        this.maxChartDataCount = Math.max.apply(Math, datas.map(function (data) { return data.data.length; }));
         this.customColorDefs = this.createSvgElement('defs', [
             { property: 'class', value: 'customColor' },
         ]);
+        // 줌인 줌아웃 기능 활성화
+        if (zoom) {
+            if (showDataCount) {
+                // 사용자가 화면에 보여줄 개수를 입력했을 경우
+                this.showDataCount = showDataCount;
+            }
+            else {
+                // 사용자가 화면에 보여줄 개수를 입력하지 않았을 경우
+                this.showDataCount = this.xAxisCount;
+            }
+            this.zoom = zoom;
+        }
         this.appendToChart(this.customColorDefs);
         (_a = this.getTarget()) === null || _a === void 0 ? void 0 : _a.appendChild(this.chart);
     }

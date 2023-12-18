@@ -7,6 +7,8 @@ interface ChartType {
   };
   datas: ChartDataType[];
   labels: string[];
+  zoom?: boolean;
+  showDataCount?: number;
 }
 
 interface ChartDataType {
@@ -55,18 +57,27 @@ class Chart {
   private padding: ChartPaddingType = { bottom: 0, left: 0, top: 0, right: 0 };
 
   private datas: ChartDataType[];
-  private labels: string[]; // x축에서 표현되는 라벨 들
+  private labels: string[]; // x축에서 표현되는 라벨들
+
   private xAxisCount: number; // x축에서 표현되는 라벨의 개수
-  private yAxisCount: number = 10;
+  private yAxisCount: number = 10; // y축에서 표현되는 라벨의 개수
+
+  private maxChartDataCount: number; // 차트 데이터 개수 중 가장 큰 수
+
   private maxData: number = 0; // y축에서 표현되는 가장 큰 수
   private minData: number = 0; // y축에서 표현되는 가장 작은 수
 
   private defaultColor = '#fff';
   private customColorDefs: SVGSVGElement;
 
+  private zoom = false; // 줌인, 줌아웃 기능 추가 여부
+  private showDataCount: number; // 화면에 보여줄 데이터 개수
+
   constructor(data: ChartType) {
-    const { datas, size, targetId, labels } = data;
-    this.chart = this.createSvgElement('svg');
+    const { datas, size, targetId, labels, zoom = false, showDataCount } = data;
+    this.chart = this.createSvgElement('svg', [
+      { property: 'id', value: 'flowbit_svg' },
+    ]);
 
     this.targetId = targetId;
     this.width = size.width;
@@ -78,9 +89,23 @@ class Chart {
     this.xAxisCount = labels.length;
     this.maxData = Math.max(...datas.map((data) => data.max));
     this.minData = Math.min(...datas.map((data) => data.min));
+    this.maxChartDataCount = Math.max(...datas.map((data) => data.data.length));
     this.customColorDefs = this.createSvgElement('defs', [
       { property: 'class', value: 'customColor' },
     ]);
+
+    // 줌인 줌아웃 기능 활성화
+    if (zoom) {
+      if (showDataCount) {
+        // 사용자가 화면에 보여줄 개수를 입력했을 경우
+        this.showDataCount = showDataCount;
+      } else {
+        // 사용자가 화면에 보여줄 개수를 입력하지 않았을 경우
+        this.showDataCount = this.xAxisCount;
+      }
+
+      this.zoom = zoom;
+    }
 
     this.appendToChart(this.customColorDefs);
     this.getTarget()?.appendChild(this.chart);
@@ -228,7 +253,7 @@ class Chart {
    * SVG 기본 값을 설정하는 함수
    */
   private setSVGElement = () => {
-    // Make SVG Container
+    // Create SVG Container
     this.chart.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     // Set ViewBox
     this.chart.setAttribute('viewBox', `0 0 ${this.width} ${this.hegiht}`);
@@ -243,6 +268,7 @@ class Chart {
       { property: 'class', value: 'axis' },
       { property: 'stroke', value: '#fff' },
       { property: 'stroke-width', value: '5' },
+      { property: 'id', value: 'flowbit_axios' },
     ]);
 
     // 2. Draw X Axis
@@ -375,23 +401,23 @@ class Chart {
     }
 
     // y축 가이드 라인
-    for (let i = 0; i <= this.xAxisCount - 1; i++) {
-      const x =
-        (i / (this.xAxisCount - 1)) *
-          (this.width - this.padding.left - this.padding.right) +
-        this.padding.left;
-      const y1 = this.hegiht - this.padding.bottom;
-      const y2 = this.padding.top;
+    // for (let i = 0; i <= this.xAxisCount - 1; i++) {
+    //   const x =
+    //     (i / (this.xAxisCount - 1)) *
+    //       (this.width - this.padding.left - this.padding.right) +
+    //     this.padding.left;
+    //   const y1 = this.hegiht - this.padding.bottom;
+    //   const y2 = this.padding.top;
 
-      const line = this.createSvgElement('line', [
-        { property: 'x1', value: x + '' },
-        { property: 'x2', value: x + '' },
-        { property: 'y1', value: y1 + '' },
-        { property: 'y2', value: y2 + '' },
-      ]);
+    //   const line = this.createSvgElement('line', [
+    //     { property: 'x1', value: x + '' },
+    //     { property: 'x2', value: x + '' },
+    //     { property: 'y1', value: y1 + '' },
+    //     { property: 'y2', value: y2 + '' },
+    //   ]);
 
-      gTagOfLine.appendChild(line);
-    }
+    //   gTagOfLine.appendChild(line);
+    // }
 
     this.appendToChart(gTagOfLine);
   };
@@ -401,32 +427,72 @@ class Chart {
    */
   private setPoints = () => {
     // make g container
-    const gTagOfPolyLine = this.createSvgElement('g');
+    const gTagOfPolyLine = this.createSvgElement('g', [
+      { property: 'id', value: 'flowchart_datas' },
+    ]);
     gTagOfPolyLine.classList.add('datas');
-    // set line
-    for (let i = 0; i < this.datas.length; i++) {
-      const data = this.datas[i];
-      let pointList = data.data.map((value, j) => {
-        let x =
-          (j / this.datas[0].data.length) *
-            (this.width - this.padding.left - this.padding.right) +
-          this.padding.left;
-        let y =
-          this.hegiht -
-          this.padding.top -
-          this.padding.bottom -
-          (this.hegiht - this.padding.bottom - this.padding.top) *
-            ((value - this.minData) / (this.maxData - this.minData)) +
-          this.padding.top;
 
-        return `${x},${y}`;
-      });
+    for (let i = 0; i < this.datas.length; i++) {
+      // SET Poly Line
+      const { data, customColor, color, width } = this.datas[i];
+
+      let pointList: string[] = [];
+      if (this.zoom) {
+        // 줌인 줌아웃 기능 활성화한 버전
+        // TODO 줌인 줌 아웃 기능
+        // data.length를 차트에 보여줄 개수를 변수 처리
+        // 배열의 끝에서부터 보여줄 개수만큼 보여주는데 만약 해당 차트가 최대 길이보다 작다면 그만큼 차감해서 보여줘야 함
+        // J 변수에 차트 최대 길이가 적용되어야 하는데...
+        // 데이터 배열을 끝에서부터 보여줘야 하기에 배열의 최대 길이에서 보여줄 개수만큼만 배열의 길이 끝에서부터 역순으로 보여줘야 함
+        const diff = this.maxChartDataCount - data.length;
+        let count = 0;
+        for (
+          let j = data.length - this.showDataCount + diff;
+          j < data.length;
+          j++
+        ) {
+          const value = data[j];
+          let x =
+            (count / (this.showDataCount - 1)) * // TODO data.data.length를 차트에 데이터를 보여줄 개수로 변수처리
+              (this.width - this.padding.left - this.padding.right) +
+            this.padding.left;
+          let y =
+            this.hegiht -
+            this.padding.top -
+            this.padding.bottom -
+            (this.hegiht - this.padding.bottom - this.padding.top) *
+              ((value - this.minData) / (this.maxData - this.minData)) +
+            this.padding.top;
+
+          pointList.push(`${x},${y}`);
+
+          count++;
+        }
+        // TODO END
+      } else {
+        // 줌인 줌아웃 기능 비활성화 버전
+        pointList = data.map((value, j) => {
+          let x =
+            (j / this.datas[0].data.length) *
+              (this.width - this.padding.left - this.padding.right) +
+            this.padding.left;
+          let y =
+            this.hegiht -
+            this.padding.top -
+            this.padding.bottom -
+            (this.hegiht - this.padding.bottom - this.padding.top) *
+              ((value - this.minData) / (this.maxData - this.minData)) +
+            this.padding.top;
+
+          return `${x},${y}`;
+        });
+      }
 
       // set color
       // let customColor = data.customColor().border;
       let borderCustomColor = '';
-      if (data.customColor) {
-        let customColorElement = data.customColor().border;
+      if (customColor) {
+        let customColorElement = customColor().border;
         if (customColorElement) {
           borderCustomColor = this.setCustomColor(customColorElement);
         }
@@ -442,21 +508,21 @@ class Chart {
             if (borderCustomColor !== '') {
               color = `url('#${borderCustomColor}')`;
             } else {
-              color = data.color;
+              color = color;
             }
             return color === undefined ? this.defaultColor : color;
           })(),
         },
         { property: 'fill', value: 'none' },
-        { property: 'stroke-width', value: data.width + '' },
+        { property: 'stroke-width', value: width + '' },
         { property: 'stroke-linecap', value: 'round' },
         { property: 'stroke-linejoin', value: 'round' },
       ]);
 
-      // draw last point circle
+      // Draw last point circle
       let lastPointCustomColor = '';
-      if (data.customColor) {
-        let customColorElement = data.customColor().lastPoint;
+      if (customColor) {
+        let customColorElement = customColor().lastPoint;
         if (customColorElement) {
           lastPointCustomColor = this.setCustomColor(customColorElement);
         }
@@ -468,7 +534,7 @@ class Chart {
         .split(',')
         .map((point) => Number(point));
 
-      // Gradient
+      // Set LastPoint Gradient
       const lastPoint = this.createSvgElement('circle', [
         { property: 'cx', value: lastPointPosition[0] + '' },
         { property: 'cy', value: lastPointPosition[1] + '' },
@@ -494,8 +560,7 @@ class Chart {
               const radialStop1 = this.createSvgElement('stop', [
                 {
                   property: 'stop-color',
-                  value:
-                    data.color === undefined ? this.defaultColor : data.color,
+                  value: color === undefined ? this.defaultColor : color,
                 },
                 {
                   property: 'offset',
@@ -507,8 +572,7 @@ class Chart {
                 { property: 'stop-opacity', value: '0' },
                 {
                   property: 'stop-color',
-                  value:
-                    data.color === undefined ? this.defaultColor : data.color,
+                  value: color === undefined ? this.defaultColor : color,
                 },
               ]);
               radialGradientTag.appendChild(radialStop1);
@@ -524,7 +588,48 @@ class Chart {
       this.appendChilds(gTagOfPolyLine, [polyLine, lastPoint]);
     }
 
+    // 데이터의 영역 설정(커서 표시)
+    const Area = this.setArea({
+      x: this.padding.left + '',
+      y: this.padding.top + '',
+      width: this.width - this.padding.right - this.padding.left + '',
+      height: this.hegiht - this.padding.top - this.padding.bottom + '',
+    });
+
+    Area.style.cursor =
+      'url("https://www.bithumb.com/react/charting_library/sta…es/crosshair.6c091f7d5427d0c5e6d9dc3a90eb2b20.cur"),crosshair';
+    this.appendChilds(gTagOfPolyLine, [Area]);
     this.appendToChart(gTagOfPolyLine);
+  };
+
+  /**
+   * Chart의 데이터 영역을 지정하는 함수
+   * 줌인 줌 아웃 등 여러 이벤트 영역에 필요한 범위를 설정함
+   */
+  /**
+   *
+   * @param {x: string, y: width: string, hegiht: string} param
+   * @returns SVGElement
+   */
+  private setArea = ({ x, y, width, height }) => {
+    const Area = this.createSvgElement('rect', [
+      { property: 'x', value: x },
+      { property: 'y', value: y },
+      {
+        property: 'width',
+        value: width,
+      },
+      {
+        property: 'height',
+        value: height,
+      },
+      {
+        property: 'fill-opacity',
+        value: '0',
+      },
+    ]);
+
+    return Area;
   };
 
   /**
@@ -604,6 +709,35 @@ class Chart {
   };
 
   /**
+   * Chart의 Zoom 기능을 설정하는 함수
+   */
+  private setZoomAction = () => {
+    this.chart.addEventListener('mousewheel', (e: any) => {
+      e.preventDefault();
+      if (e.deltaY > 0) {
+        // Scroll Down
+        if (this.showDataCount > 4) this.showDataCount -= 3;
+      } else {
+        // Scroll Up
+        if (this.showDataCount < this.maxChartDataCount - 3)
+          this.showDataCount += 3;
+      }
+
+      document.getElementById('flowchart_datas')?.remove();
+      document.getElementById('flowbit_axios')?.remove();
+      this.setPoints();
+      this.setAxis();
+    });
+  };
+
+  /**
+   * Chart의 Interaction 기능을 설정하는 함수
+   */
+  private setInteraction = () => {
+    if (this.zoom) this.setZoomAction();
+  };
+
+  /**
    * Chart를 그리는 함수
    */
   public render = () => {
@@ -614,8 +748,8 @@ class Chart {
     // 1. Set Padding
     this.setSVGPadding();
 
-    // Draw GuideLine
-    this.setGuideLine();
+    // // Draw GuideLine
+    // this.setGuideLine();
 
     // 데이터 구축
     this.setPoints();
@@ -628,5 +762,11 @@ class Chart {
 
     // Draw Legend
     this.setLegend();
+
+    // Draw GuideLine
+    this.setGuideLine();
+
+    // Set Interaction
+    this.setInteraction();
   };
 }
