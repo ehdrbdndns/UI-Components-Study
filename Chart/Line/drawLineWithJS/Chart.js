@@ -93,7 +93,6 @@ var Chart = /** @class */ (function () {
                 var increment = _this.showLabelCount > _this.showDataCount
                     ? 1
                     : Math.ceil(_this.showDataCount / _this.showLabelCount);
-                console.log(_this.showDataCount, _this.showLabelCount, increment);
                 for (var i = 0; i < _this.showDataCount; i += increment) {
                     var x = (i / (_this.showDataCount - 1)) *
                         (_this.width - _this.padding.left - _this.padding.right) +
@@ -491,10 +490,10 @@ var Chart = /** @class */ (function () {
             _this.setLegend();
             // Draw GuideLine
             _this.setGuideLine();
-            // Draw X and Y Axis
-            _this.setAxis();
             // 데이터 구축
             _this.setPoints();
+            // Draw X and Y Axis
+            _this.setAxis();
             // Set Interaction
             _this.setInteraction();
         };

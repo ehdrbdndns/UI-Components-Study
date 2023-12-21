@@ -358,7 +358,6 @@ class Chart {
         this.showLabelCount > this.showDataCount
           ? 1
           : Math.ceil(this.showDataCount / this.showLabelCount);
-      console.log(this.showDataCount, this.showLabelCount, increment);
       for (let i = 0; i < this.showDataCount; i += increment) {
         let x =
           (i / (this.showDataCount - 1)) *
@@ -814,11 +813,11 @@ class Chart {
     // Draw GuideLine
     this.setGuideLine();
 
-    // Draw X and Y Axis
-    this.setAxis();
-
     // 데이터 구축
     this.setPoints();
+
+    // Draw X and Y Axis
+    this.setAxis();
 
     // Set Interaction
     this.setInteraction();
