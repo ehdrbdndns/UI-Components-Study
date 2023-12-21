@@ -78,54 +78,71 @@ var Chart = /** @class */ (function () {
                 { property: 'font-size', value: _this.fontSize + 'px' },
                 { property: 'class', value: 'labels' },
                 { property: 'text-anchor', value: 'end' },
+                { property: 'id', value: 'flowbit_label' },
             ]);
             var gTagOfXLabel = _this.createSvgElement('g', [
                 { property: 'text-anchor', value: 'middle' },
             ]);
             var gTagOfYLabel = _this.createSvgElement('g', [
+                { property: 'id', value: 'flowbit_yLabel' },
                 { property: 'dominant-baseline', value: 'central' },
             ]);
-            // xLabel
-            _this.labels.forEach(function (label, i) {
-                var x = (i / (_this.xAxisCount - 1)) *
-                    (_this.width - _this.padding.left - _this.padding.right) +
-                    _this.padding.left;
-                var y = _this.hegiht - _this.padding.bottom + _this.fontSize * 2;
-                var text = _this.createSvgElement('text', [
-                    { property: 'x', value: x + '' },
-                    { property: 'y', value: y + '' },
-                ]);
-                text.append(label);
-                gTagOfXLabel.appendChild(text);
-            });
-            // yLabel
+            // x label
+            if (_this.zoom) {
+                // 줌인 줌 아웃 모드일 경우
+                var increment = _this.showLabelCount > _this.showDataCount
+                    ? 1
+                    : Math.ceil(_this.showDataCount / _this.showLabelCount);
+                console.log(_this.showDataCount, _this.showLabelCount, increment);
+                for (var i = 0; i < _this.showDataCount; i += increment) {
+                    var x = (i / (_this.showDataCount - 1)) *
+                        (_this.width - _this.padding.left - _this.padding.right) +
+                        _this.padding.left;
+                    var y = _this.hegiht - _this.padding.bottom + _this.fontSize * 2;
+                    var text = _this.createSvgElement('text', [
+                        { property: 'x', value: x + '' },
+                        { property: 'y', value: y + '' },
+                    ]);
+                    // TODO labels 위치 변경
+                    text.append(_this.labels[_this.xAxisCount - _this.showDataCount + i]);
+                    gTagOfXLabel.appendChild(text);
+                }
+            }
+            else {
+                _this.labels.forEach(function (label, i) {
+                    var x = (i / (_this.xAxisCount - 1)) *
+                        (_this.width - _this.padding.left - _this.padding.right) +
+                        _this.padding.left;
+                    var y = _this.hegiht - _this.padding.bottom + _this.fontSize * 2;
+                    var text = _this.createSvgElement('text', [
+                        { property: 'x', value: x + '' },
+                        { property: 'y', value: y + '' },
+                    ]);
+                    text.append(label);
+                    gTagOfXLabel.appendChild(text);
+                });
+            }
+            // y label
             for (var i = 0; i <= _this.yAxisCount; i++) {
-                // 라벨 문자 생성
-                var label = ((_this.yAxisCount - i) / _this.yAxisCount) *
-                    (_this.maxData - _this.minData) +
-                    _this.minData;
-                // 라벨 텍스트 길이 생성
-                var text = _this.createSvgElement('text');
-                text.append(Math.floor(label) + '');
-                var textLength = _this.getBBox(text).width;
-                // X축 좌표 생성
-                var gapFromAxiosAndLabel = 20;
+                // X 좌표 생성
+                var gapFromAxiosAndLabel = 20; // 축과 라벨의 사이 값
                 var x = _this.padding.left - gapFromAxiosAndLabel;
-                // Y축 좌표 생성
+                // Y 좌표 생성
                 var y = (_this.hegiht - _this.padding.bottom - _this.padding.top) *
                     (i / _this.yAxisCount) +
                     _this.padding.top;
+                // 텍스트 생성
+                var label = ((_this.yAxisCount - i) / _this.yAxisCount) *
+                    (_this.maxData - _this.minData) +
+                    _this.minData;
+                var text = _this.createSvgElement('text');
+                text.append(Math.floor(label) + '');
                 _this.setAttributes(text, [
                     { property: 'x', value: x + '' },
                     { property: 'y', value: y + '' },
                 ]);
-                // const text = this.createSvgElement('text', [
-                //   { property: 'x', value: x + '' },
-                //   { property: 'y', value: y + '' },
-                // ]);
                 gTagOfYLabel.appendChild(text);
             }
-            // label box
             _this.appendChilds(gTagOfText, [gTagOfXLabel, gTagOfYLabel]);
             _this.appendToChart(gTagOfText);
         };
@@ -177,25 +194,21 @@ var Chart = /** @class */ (function () {
         this.setPoints = function () {
             // make g container
             var gTagOfPolyLine = _this.createSvgElement('g', [
-                { property: 'id', value: 'flowchart_datas' },
+                { property: 'id', value: 'flowbit_datas' },
             ]);
             gTagOfPolyLine.classList.add('datas');
             var _loop_1 = function (i) {
                 // SET Poly Line
-                var _a = _this.datas[i], data = _a.data, customColor = _a.customColor, color = _a.color, width = _a.width;
+                var _a = _this.datas[i], data = _a.data, customColor = _a.customColor, width = _a.width;
                 var pointList = [];
                 if (_this.zoom) {
                     // 줌인 줌아웃 기능 활성화한 버전
-                    // TODO 줌인 줌 아웃 기능
-                    // data.length를 차트에 보여줄 개수를 변수 처리
-                    // 배열의 끝에서부터 보여줄 개수만큼 보여주는데 만약 해당 차트가 최대 길이보다 작다면 그만큼 차감해서 보여줘야 함
-                    // J 변수에 차트 최대 길이가 적용되어야 하는데...
-                    // 데이터 배열을 끝에서부터 보여줘야 하기에 배열의 최대 길이에서 보여줄 개수만큼만 배열의 길이 끝에서부터 역순으로 보여줘야 함
+                    // 가장 긴 데이터 리스트와의 길이 차이
                     var diff = _this.maxChartDataCount - data.length;
-                    var count = 0;
                     for (var j = data.length - _this.showDataCount + diff; j < data.length; j++) {
                         var value = data[j];
-                        var x = (count / (_this.showDataCount - 1)) * // TODO data.data.length를 차트에 데이터를 보여줄 개수로 변수처리
+                        var x = ((j - (data.length - _this.showDataCount + diff)) /
+                            (_this.showDataCount - 1)) *
                             (_this.width - _this.padding.left - _this.padding.right) +
                             _this.padding.left;
                         var y = _this.hegiht -
@@ -205,9 +218,7 @@ var Chart = /** @class */ (function () {
                                 ((value - _this.minData) / (_this.maxData - _this.minData)) +
                             _this.padding.top;
                         pointList.push("".concat(x, ",").concat(y));
-                        count++;
                     }
-                    // TODO END
                 }
                 else {
                     // 줌인 줌아웃 기능 비활성화 버전
@@ -334,9 +345,6 @@ var Chart = /** @class */ (function () {
         /**
          * Chart의 데이터 영역을 지정하는 함수
          * 줌인 줌 아웃 등 여러 이벤트 영역에 필요한 범위를 설정함
-         */
-        /**
-         *
          * @param {x: string, y: width: string, hegiht: string} param
          * @returns SVGElement
          */
@@ -434,8 +442,9 @@ var Chart = /** @class */ (function () {
          */
         this.setZoomAction = function () {
             _this.chart.addEventListener('mousewheel', function (e) {
-                var _a, _b;
+                var _a, _b, _c;
                 e.preventDefault();
+                // 데이터 범위 재조정
                 if (e.deltaY > 0) {
                     // Scroll Down
                     if (_this.showDataCount > 4)
@@ -446,9 +455,17 @@ var Chart = /** @class */ (function () {
                     if (_this.showDataCount < _this.maxChartDataCount - 3)
                         _this.showDataCount += 3;
                 }
-                (_a = document.getElementById('flowchart_datas')) === null || _a === void 0 ? void 0 : _a.remove();
-                (_b = document.getElementById('flowbit_axios')) === null || _b === void 0 ? void 0 : _b.remove();
+                // TODO 축을 새로 생성할 필요 없이 flowchart_data를 감싸는 또 다른 g태그를 만들자
+                // 차트 데이터의 최대 최소 값 재설정
+                _this.setMinMaxData();
+                // 차트 라벨 다시 그리기
+                (_a = document.getElementById('flowbit_label')) === null || _a === void 0 ? void 0 : _a.remove();
+                _this.setLabel();
+                // 재조정 된 데이터 다시 셋팅
+                (_b = document.getElementById('flowbit_datas')) === null || _b === void 0 ? void 0 : _b.remove();
                 _this.setPoints();
+                // 데이터가 축 위로 올라오는 현상을 방지하기 위해 다시 셋팅
+                (_c = document.getElementById('flowbit_axios')) === null || _c === void 0 ? void 0 : _c.remove();
                 _this.setAxis();
             });
         };
@@ -468,22 +485,20 @@ var Chart = /** @class */ (function () {
             _this.setSVGElement();
             // 1. Set Padding
             _this.setSVGPadding();
-            // // Draw GuideLine
-            // this.setGuideLine();
-            // 데이터 구축
-            _this.setPoints();
-            // Draw X and Y Axis
-            _this.setAxis();
             // Draw X and Y Label
             _this.setLabel();
             // Draw Legend
             _this.setLegend();
             // Draw GuideLine
             _this.setGuideLine();
+            // Draw X and Y Axis
+            _this.setAxis();
+            // 데이터 구축
+            _this.setPoints();
             // Set Interaction
             _this.setInteraction();
         };
-        var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels, _b = data.zoom, zoom = _b === void 0 ? false : _b, showDataCount = data.showDataCount;
+        var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels, _b = data.zoom, zoom = _b === void 0 ? false : _b, showDataCount = data.showDataCount, showLabelCount = data.showLabelCount;
         this.chart = this.createSvgElement('svg', [
             { property: 'id', value: 'flowbit_svg' },
         ]);
@@ -494,24 +509,20 @@ var Chart = /** @class */ (function () {
         this.datas = datas;
         this.labels = labels;
         this.xAxisCount = labels.length;
-        this.maxData = Math.max.apply(Math, datas.map(function (data) { return data.max; }));
-        this.minData = Math.min.apply(Math, datas.map(function (data) { return data.min; }));
         this.maxChartDataCount = Math.max.apply(Math, datas.map(function (data) { return data.data.length; }));
         this.customColorDefs = this.createSvgElement('defs', [
             { property: 'class', value: 'customColor' },
         ]);
         // 줌인 줌아웃 기능 활성화
         if (zoom) {
-            if (showDataCount) {
-                // 사용자가 화면에 보여줄 개수를 입력했을 경우
-                this.showDataCount = showDataCount;
-            }
-            else {
-                // 사용자가 화면에 보여줄 개수를 입력하지 않았을 경우
-                this.showDataCount = this.xAxisCount;
-            }
+            this.showDataCount = showDataCount ? showDataCount : this.xAxisCount;
+            this.showLabelCount = showLabelCount
+                ? showLabelCount
+                : this.labels.length;
             this.zoom = zoom;
         }
+        // 줌인 줌 아웃 기능이 활성화 여부가 결정된 이후에 실행시켜야 함
+        this.setMinMaxData();
         this.appendToChart(this.customColorDefs);
         (_a = this.getTarget()) === null || _a === void 0 ? void 0 : _a.appendChild(this.chart);
     }
@@ -613,6 +624,36 @@ var Chart = /** @class */ (function () {
      */
     Chart.prototype.appendToChart = function (child) {
         this.chart.appendChild(child);
+    };
+    /**
+     * Y 라벨에 표시되는 최대 값 최소 값 범위를 설정하는 함수
+     * @param max Y 라벨에 표시되는 최대 값
+     * @param min Y 라벨에 표시되는 최소 값
+     */
+    Chart.prototype.setMinMaxData = function () {
+        var _this = this;
+        if (this.zoom) {
+            // 줌인 줌 아웃 기능 활성화 시에 사용됨
+            // Set min, max data for datas
+            var newMaxList_1 = [];
+            var newMinList_1 = [];
+            this.datas.forEach(function (_) {
+                var data = _.data;
+                var startIndex = _this.maxChartDataCount - _this.showDataCount;
+                newMinList_1.push(Math.min.apply(Math, data.slice(startIndex)));
+                newMaxList_1.push(Math.max.apply(Math, data.slice(startIndex)));
+            });
+            // Set average of the range of min and max
+            var newMax = Math.max.apply(Math, newMaxList_1);
+            var newMin = Math.min.apply(Math, newMinList_1);
+            var averageOfMinMax = (newMax - newMin) / this.yAxisCount;
+            this.maxData = newMax + averageOfMinMax;
+            this.minData = newMin - averageOfMinMax;
+        }
+        else {
+            this.maxData = Math.max.apply(Math, this.datas.map(function (data) { return data.max; }));
+            this.minData = Math.min.apply(Math, this.datas.map(function (data) { return data.min; }));
+        }
     };
     return Chart;
 }());
