@@ -7,6 +7,7 @@ interface ChartType {
   };
   datas: ChartDataType[];
   labels: string[];
+  backgroundColor: string;
   zoom?: boolean;
   showDataCount?: number;
   showLabelCount?: number;
@@ -77,7 +78,8 @@ class Chart {
   private maxData: number = 0; // y축에서 표현되는 가장 큰 수
   private minData: number = 0; // y축에서 표현되는 가장 작은 수
 
-  private defaultColor = '#fff';
+  private defaultColor: string = '#fff'; // data Line의 기본 색상
+  private backgrondColor: string = '#48519B'; // Chart 배경 색상
 
   private zoom = false; // 줌인, 줌아웃 기능 추가 여부
   private showDataCount: number = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
@@ -92,6 +94,7 @@ class Chart {
       size,
       targetId,
       labels,
+      backgroundColor,
       zoom = false,
       showDataCount,
       showLabelCount,
@@ -100,6 +103,7 @@ class Chart {
     this.width = size.width;
     this.hegiht = size.height;
     this.fontSize = size.font;
+    this.backgrondColor = backgroundColor;
 
     this.datas = datas;
     this.labels = labels;
@@ -124,6 +128,8 @@ class Chart {
       { property: 'xmlns', value: 'http://www.w3.org/2000/svg' },
       { property: 'viewBox', value: `0 0 ${this.width} ${this.hegiht}` },
     ]);
+    this.chart.style.backgroundColor = this.backgrondColor;
+    this.chart.style.display = 'block';
     this.getTarget()?.appendChild(this.chart);
   }
 
@@ -187,7 +193,7 @@ class Chart {
     },
     gradientUnits: 'userSpaceOnUse' | 'objectBoundingBox' = 'objectBoundingBox'
   ) {
-    const randomId = 'flowbitChart' + Math.random().toString(16);
+    const randomId = 'flowbit_' + Math.random().toString(16);
     if (gradientUnits === 'userSpaceOnUse') {
       this.setAttributes(colorSvgElement, [
         { property: 'gradientUnits', value: gradientUnits },
@@ -838,7 +844,7 @@ class Chart {
     this.hoverGuidLineContainer.setAttribute('d', pathOfGuidLine);
     this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
 
-    // 3. Point to data line
+    // 3. Point from data line
     // 4. Pop info dialog for datas
   };
 

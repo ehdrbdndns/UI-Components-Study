@@ -15,14 +15,17 @@
       }
       .container {
         width: 800px;
+        overflow: hidden;
         border-radius: 15px;
         border: 1px solid #48519b;
-        background-color: rgba(37, 57, 88, 0.35);
+        /* background-color: rgba(37, 57, 88, 0.35); */
       }
     </style>
   </head>
   <body>
-    <div id="chart" class="container"></div>
+    <div>
+      <div id="chart" class="container"></div>
+    </div>
   </body>
   <script src="./Chart.js"></script>
   <script>
@@ -172,6 +175,7 @@
       },
       datas: testDataList,
       labels: labels,
+      backgroundColor: 'rgba(37, 57, 88, 0.35)',
       zoom: true,
       showDataCount: 15,
       showLabelCount: 15,

@@ -18,7 +18,8 @@ var Chart = /** @class */ (function () {
         this.yAxisCount = 10; // y축에서 표현되는 라벨의 개수
         this.maxData = 0; // y축에서 표현되는 가장 큰 수
         this.minData = 0; // y축에서 표현되는 가장 작은 수
-        this.defaultColor = '#fff';
+        this.defaultColor = '#fff'; // data Line의 기본 색상
+        this.backgrondColor = '#48519B'; // Chart 배경 색상
         this.zoom = false; // 줌인, 줌아웃 기능 추가 여부
         this.showDataCount = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
         this.showLabelCount = 0; // 화면에 보여줄 라벨 개수 (zoom 모드에서만 사용하는 변수)
@@ -506,7 +507,7 @@ var Chart = /** @class */ (function () {
             var pathOfGuidLine = "M ".concat(xOfGuidLine, ",").concat(_this.padding.top, "L").concat(xOfGuidLine, ",").concat(_this.hegiht - _this.padding.bottom);
             _this.hoverGuidLineContainer.setAttribute('d', pathOfGuidLine);
             _this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
-            // 3. Point to data line
+            // 3. Point from data line
             // 4. Pop info dialog for datas
         };
         /**
@@ -546,11 +547,12 @@ var Chart = /** @class */ (function () {
             // Set Interaction
             _this.setInteraction();
         };
-        var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels, _b = data.zoom, zoom = _b === void 0 ? false : _b, showDataCount = data.showDataCount, showLabelCount = data.showLabelCount;
+        var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels, backgroundColor = data.backgroundColor, _b = data.zoom, zoom = _b === void 0 ? false : _b, showDataCount = data.showDataCount, showLabelCount = data.showLabelCount;
         this.targetId = targetId;
         this.width = size.width;
         this.hegiht = size.height;
         this.fontSize = size.font;
+        this.backgrondColor = backgroundColor;
         this.datas = datas;
         this.labels = labels;
         this.xAxisCount = labels.length;
@@ -570,6 +572,8 @@ var Chart = /** @class */ (function () {
             { property: 'xmlns', value: 'http://www.w3.org/2000/svg' },
             { property: 'viewBox', value: "0 0 ".concat(this.width, " ").concat(this.hegiht) },
         ]);
+        this.chart.style.backgroundColor = this.backgrondColor;
+        this.chart.style.display = 'block';
         (_a = this.getTarget()) === null || _a === void 0 ? void 0 : _a.appendChild(this.chart);
     }
     /**
@@ -623,7 +627,7 @@ var Chart = /** @class */ (function () {
             y2: '',
         }; }
         if (gradientUnits === void 0) { gradientUnits = 'objectBoundingBox'; }
-        var randomId = 'flowbitChart' + Math.random().toString(16);
+        var randomId = 'flowbit_' + Math.random().toString(16);
         if (gradientUnits === 'userSpaceOnUse') {
             this.setAttributes(colorSvgElement, [
                 { property: 'gradientUnits', value: gradientUnits },
