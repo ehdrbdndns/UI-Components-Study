@@ -20,6 +20,8 @@ var Chart = /** @class */ (function () {
         this.minData = 0; // y축에서 표현되는 가장 작은 수
         this.defaultColor = '#fff';
         this.zoom = false; // 줌인, 줌아웃 기능 추가 여부
+        this.showDataCount = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
+        this.showLabelCount = 0; // 화면에 보여줄 라벨 개수 (zoom 모드에서만 사용하는 변수)
         /**
          * Chart의 Padding(상하좌우)를 설정하는 함수
          */
@@ -27,7 +29,7 @@ var Chart = /** @class */ (function () {
             var textLength = _this.getTextLength(_this.maxData + '');
             _this.padding = __assign(__assign({}, _this.padding), { 
                 // mix font-size and datas.length
-                bottom: _this.fontSize * 5, top: _this.fontSize * 5 + _this.datas.length * 25, left: textLength * 2, right: textLength });
+                bottom: _this.fontSize * 5, top: _this.fontSize * 5 + _this.datas.length * 25, left: textLength * 2.5, right: textLength });
         };
         /**
          * SVG 기본 값을 설정하는 함수
@@ -254,6 +256,7 @@ var Chart = /** @class */ (function () {
                                 color = "url('#".concat(borderCustomColor, "')");
                             }
                             else {
+                                // eslint-disable-next-line no-self-assign
                                 color = color;
                             }
                             return color === undefined ? _this.defaultColor : color;
@@ -281,7 +284,7 @@ var Chart = /** @class */ (function () {
                 var lastPoint = _this.createSvgElement('circle', [
                     { property: 'cx', value: lastPointPosition[0] + '' },
                     { property: 'cy', value: lastPointPosition[1] + '' },
-                    { property: 'r', value: '30' },
+                    { property: 'r', value: '20' },
                     {
                         property: 'fill',
                         value: (function () {
@@ -344,7 +347,7 @@ var Chart = /** @class */ (function () {
         /**
          * Chart의 데이터 영역을 지정하는 함수
          * 줌인 줌 아웃 등 여러 이벤트 영역에 필요한 범위를 설정함
-         * @param {x: string, y: width: string, hegiht: string} param
+         * @param {x: string, y: string, width: string, hegiht: string} param
          * @returns SVGElement
          */
         this.setArea = function (_a) {
@@ -445,14 +448,14 @@ var Chart = /** @class */ (function () {
                 e.preventDefault();
                 // 데이터 범위 재조정
                 if (e.deltaY > 0) {
-                    // Scroll Down
-                    if (_this.showDataCount > 4)
-                        _this.showDataCount -= 3;
-                }
-                else {
                     // Scroll Up
                     if (_this.showDataCount < _this.maxChartDataCount - 3)
                         _this.showDataCount += 3;
+                }
+                else {
+                    // Scroll Down
+                    if (_this.showDataCount > 4)
+                        _this.showDataCount -= 3;
                 }
                 // TODO 축을 새로 생성할 필요 없이 flowchart_data를 감싸는 또 다른 g태그를 만들자
                 // 차트 데이터의 최대 최소 값 재설정
@@ -565,6 +568,7 @@ var Chart = /** @class */ (function () {
      * 사용자가 따로 지정한 Color(Gradient 등)를 지정하는 함수
      * @param colorSvgElement
      * @param position
+     * @param gradientUnits
      * @returns {string} Defs에 지정된 Color ID 값
      */
     Chart.prototype.setCustomColor = function (colorSvgElement, position, gradientUnits) {

@@ -72,8 +72,8 @@ class Chart {
   private customColorDefs: SVGSVGElement;
 
   private zoom = false; // 줌인, 줌아웃 기능 추가 여부
-  private showDataCount: number; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
-  private showLabelCount: number; // 화면에 보여줄 라벨 개수 (zoom 모드에서만 사용하는 변수)
+  private showDataCount: number = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
+  private showLabelCount: number = 0; // 화면에 보여줄 라벨 개수 (zoom 모드에서만 사용하는 변수)
 
   constructor(data: ChartType) {
     const {
@@ -166,6 +166,7 @@ class Chart {
    * 사용자가 따로 지정한 Color(Gradient 등)를 지정하는 함수
    * @param colorSvgElement
    * @param position
+   * @param gradientUnits
    * @returns {string} Defs에 지정된 Color ID 값
    */
   private setCustomColor(
@@ -282,7 +283,7 @@ class Chart {
       // mix font-size and datas.length
       bottom: this.fontSize * 5,
       top: this.fontSize * 5 + this.datas.length * 25,
-      left: textLength * 2,
+      left: textLength * 2.5,
       right: textLength,
     };
   };
@@ -554,6 +555,7 @@ class Chart {
             if (borderCustomColor !== '') {
               color = `url('#${borderCustomColor}')`;
             } else {
+              // eslint-disable-next-line no-self-assign
               color = color;
             }
             return color === undefined ? this.defaultColor : color;
@@ -584,7 +586,7 @@ class Chart {
       const lastPoint = this.createSvgElement('circle', [
         { property: 'cx', value: lastPointPosition[0] + '' },
         { property: 'cy', value: lastPointPosition[1] + '' },
-        { property: 'r', value: '30' },
+        { property: 'r', value: '20' },
         {
           property: 'fill',
           value: (() => {
@@ -651,10 +653,20 @@ class Chart {
   /**
    * Chart의 데이터 영역을 지정하는 함수
    * 줌인 줌 아웃 등 여러 이벤트 영역에 필요한 범위를 설정함
-   * @param {x: string, y: width: string, hegiht: string} param
+   * @param {x: string, y: string, width: string, hegiht: string} param
    * @returns SVGElement
    */
-  private setArea = ({ x, y, width, height }) => {
+  private setArea = ({
+    x,
+    y,
+    width,
+    height,
+  }: {
+    x: string;
+    y: string;
+    width: string;
+    height: string;
+  }) => {
     const Area = this.createSvgElement('rect', [
       { property: 'x', value: x },
       { property: 'y', value: y },
@@ -759,12 +771,12 @@ class Chart {
       e.preventDefault();
       // 데이터 범위 재조정
       if (e.deltaY > 0) {
-        // Scroll Down
-        if (this.showDataCount > 4) this.showDataCount -= 3;
-      } else {
         // Scroll Up
         if (this.showDataCount < this.maxChartDataCount - 3)
           this.showDataCount += 3;
+      } else {
+        // Scroll Down
+        if (this.showDataCount > 4) this.showDataCount -= 3;
       }
 
       // TODO 축을 새로 생성할 필요 없이 flowchart_data를 감싸는 또 다른 g태그를 만들자
