@@ -35,10 +35,52 @@ var Chart = /** @class */ (function () {
          * SVG 기본 값을 설정하는 함수
          */
         this.setSVGElement = function () {
-            // Create SVG Container
-            _this.chart.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            // Set ViewBox
-            _this.chart.setAttribute('viewBox', "0 0 ".concat(_this.width, " ").concat(_this.hegiht));
+            // Create Custom Color Def Container For Chart
+            _this.customColorContainer = _this.createSvgElement('defs', [
+                { property: 'class', value: 'customColor' },
+            ]);
+            // Create Legend Container For Chart
+            _this.legendContainer = _this.createSvgElement('g');
+            // Create Axios Container For Chart
+            _this.axiosContainer = _this.createSvgElement('g');
+            // Create Label Container For Chart
+            _this.labelContainer = _this.createSvgElement('g', [
+                { property: 'fill', value: '#fff' },
+                { property: 'font-size', value: _this.fontSize + 'px' },
+                { property: 'class', value: 'labels' },
+                { property: 'text-anchor', value: 'end' },
+            ]);
+            // Create Data Container For Chart
+            _this.datasContainer = _this.createSvgElement('g');
+            // Create Guide Line Container For Chart
+            _this.guideLineContainer = _this.createSvgElement('g');
+            // Create Hover Container For Chart
+            _this.hoverContainer = _this.createSvgElement('rect', [
+                { property: 'x', value: "".concat(_this.padding.left) },
+                { property: 'y', value: "".concat(_this.padding.top) },
+                {
+                    property: 'width',
+                    value: "".concat(_this.width - _this.padding.right - _this.padding.left),
+                },
+                {
+                    property: 'height',
+                    value: "".concat(_this.hegiht - _this.padding.bottom - _this.padding.top),
+                },
+                {
+                    property: 'id',
+                    value: 'flowbit_hover',
+                },
+            ]);
+            _this.hoverContainer.style.cursor =
+                'url("https://www.bithumb.com/react/charting_library/sta…es/crosshair.6c091f7d5427d0c5e6d9dc3a90eb2b20.cur"),crosshair';
+            _this.hoverContainer.style.opacity = '0';
+            _this.appendToChart(_this.customColorContainer);
+            _this.appendToChart(_this.labelContainer);
+            _this.appendToChart(_this.legendContainer);
+            _this.appendToChart(_this.guideLineContainer);
+            _this.appendToChart(_this.datasContainer);
+            _this.appendToChart(_this.axiosContainer);
+            _this.appendToChart(_this.hoverContainer);
         };
         /**
          * X축 Y축 선을 긋는 함수
@@ -69,17 +111,13 @@ var Chart = /** @class */ (function () {
             ]);
             // insert To C
             _this.appendChilds(Axis, [xAxis, yAxis]);
-            _this.appendToChart(Axis);
+            _this.appendChilds(_this.axiosContainer, [Axis]);
         };
         /**
          * X, Y축의 라벨을 설정하는 함수
          */
         this.setLabel = function () {
-            var gTagOfText = _this.createSvgElement('g', [
-                { property: 'fill', value: '#fff' },
-                { property: 'font-size', value: _this.fontSize + 'px' },
-                { property: 'class', value: 'labels' },
-                { property: 'text-anchor', value: 'end' },
+            var gTagForLabel = _this.createSvgElement('g', [
                 { property: 'id', value: 'flowbit_label' },
             ]);
             var gTagOfXLabel = _this.createSvgElement('g', [
@@ -144,8 +182,8 @@ var Chart = /** @class */ (function () {
                 ]);
                 gTagOfYLabel.appendChild(text);
             }
-            _this.appendChilds(gTagOfText, [gTagOfXLabel, gTagOfYLabel]);
-            _this.appendToChart(gTagOfText);
+            _this.appendChilds(gTagForLabel, [gTagOfXLabel, gTagOfYLabel]);
+            _this.appendChilds(_this.labelContainer, [gTagForLabel]);
         };
         /**
          * Chart의 가이드 라인을 그리는 함수
@@ -187,7 +225,7 @@ var Chart = /** @class */ (function () {
             //   ]);
             //   gTagOfLine.appendChild(line);
             // }
-            _this.appendToChart(gTagOfLine);
+            _this.appendChilds(_this.guideLineContainer, [gTagOfLine]);
         };
         /**
          * Chart의 데이터 라인을 그리는 함수
@@ -320,7 +358,7 @@ var Chart = /** @class */ (function () {
                                 ]);
                                 radialGradientTag.appendChild(radialStop1);
                                 radialGradientTag.appendChild(radialStop2);
-                                _this.appendChilds(_this.customColorDefs, [radialGradientTag]);
+                                _this.appendChilds(_this.customColorContainer, [radialGradientTag]);
                                 color = "url('#".concat(circleId, "')");
                             }
                             return color === undefined ? _this.defaultColor : color;
@@ -332,43 +370,7 @@ var Chart = /** @class */ (function () {
             for (var i = 0; i < _this.datas.length; i++) {
                 _loop_1(i);
             }
-            // 데이터의 영역 설정(커서 표시)
-            var Area = _this.setArea({
-                x: _this.padding.left + '',
-                y: _this.padding.top + '',
-                width: _this.width - _this.padding.right - _this.padding.left + '',
-                height: _this.hegiht - _this.padding.top - _this.padding.bottom + '',
-            });
-            Area.style.cursor =
-                'url("https://www.bithumb.com/react/charting_library/sta…es/crosshair.6c091f7d5427d0c5e6d9dc3a90eb2b20.cur"),crosshair';
-            _this.appendChilds(gTagOfPolyLine, [Area]);
-            _this.appendToChart(gTagOfPolyLine);
-        };
-        /**
-         * Chart의 데이터 영역을 지정하는 함수
-         * 줌인 줌 아웃 등 여러 이벤트 영역에 필요한 범위를 설정함
-         * @param {x: string, y: string, width: string, hegiht: string} param
-         * @returns SVGElement
-         */
-        this.setArea = function (_a) {
-            var x = _a.x, y = _a.y, width = _a.width, height = _a.height;
-            var Area = _this.createSvgElement('rect', [
-                { property: 'x', value: x },
-                { property: 'y', value: y },
-                {
-                    property: 'width',
-                    value: width,
-                },
-                {
-                    property: 'height',
-                    value: height,
-                },
-                {
-                    property: 'fill-opacity',
-                    value: '0',
-                },
-            ]);
-            return Area;
+            _this.appendChilds(_this.datasContainer, [gTagOfPolyLine]);
         };
         /**
          * Chart의 Legend를 설정하는 함수
@@ -437,56 +439,64 @@ var Chart = /** @class */ (function () {
             for (var i = 0; i < _this.datas.length; i++) {
                 _loop_2(i);
             }
-            _this.appendToChart(gTagOfLegend);
+            _this.appendChilds(_this.legendContainer, [gTagOfLegend]);
         };
         /**
          * Chart의 Zoom 기능을 설정하는 함수
          */
-        this.setZoomAction = function () {
-            _this.chart.addEventListener('mousewheel', function (e) {
-                var _a, _b, _c;
-                e.preventDefault();
-                // 데이터 범위 재조정
-                if (e.deltaY > 0) {
-                    // Scroll Up
-                    if (_this.showDataCount < _this.maxChartDataCount - 3)
-                        _this.showDataCount += 3;
-                }
-                else {
-                    // Scroll Down
-                    if (_this.showDataCount > 4)
-                        _this.showDataCount -= 3;
-                }
-                // TODO 축을 새로 생성할 필요 없이 flowchart_data를 감싸는 또 다른 g태그를 만들자
-                // 차트 데이터의 최대 최소 값 재설정
-                _this.setMinMaxData();
-                // 차트 라벨 다시 그리기
-                (_a = document.getElementById('flowbit_label')) === null || _a === void 0 ? void 0 : _a.remove();
-                _this.setLabel();
-                // 재조정 된 데이터 다시 셋팅
-                (_b = document.getElementById('flowbit_datas')) === null || _b === void 0 ? void 0 : _b.remove();
-                _this.setPoints();
-                // 데이터가 축 위로 올라오는 현상을 방지하기 위해 다시 셋팅
-                (_c = document.getElementById('flowbit_axios')) === null || _c === void 0 ? void 0 : _c.remove();
-                _this.setAxis();
-            });
+        this.setZoomAction = function (e) {
+            var _a, _b;
+            e.preventDefault();
+            // 데이터 범위 재조정
+            if (e.deltaY > 0) {
+                // Scroll Up
+                if (_this.showDataCount < _this.maxChartDataCount - 3)
+                    _this.showDataCount += 3;
+            }
+            else {
+                // Scroll Down
+                if (_this.showDataCount > 4)
+                    _this.showDataCount -= 3;
+            }
+            // 차트 데이터의 최대 최소 값 재설정
+            _this.setMinMaxData();
+            // 차트 라벨 다시 그리기
+            (_a = document.getElementById('flowbit_label')) === null || _a === void 0 ? void 0 : _a.remove();
+            _this.setLabel();
+            // 재조정 된 데이터 다시 셋팅
+            (_b = document.getElementById('flowbit_datas')) === null || _b === void 0 ? void 0 : _b.remove();
+            _this.setPoints();
+        };
+        /**
+         * Chart의 Mouse Hover 기능을 설정하는 함수
+         * 마우스를 올린 지점에 데이터의 Info 창을 보여줌
+         */
+        this.setMouseHoverAction = function () {
+            // 1. Get X, Y Coordination from mouse poistion
+            // 2. Draw Hover line Like Y Axios Guidline
+            // 3. Point to data line
+            // 4. Pop info dialog for datas
         };
         /**
          * Chart의 Interaction 기능을 설정하는 함수
          */
         this.setInteraction = function () {
-            if (_this.zoom)
-                _this.setZoomAction();
+            // Make Interaction Area
+            // Set Scroll Event
+            // Zoom in, out 기능
+            if (_this.zoom) {
+                _this.hoverContainer.addEventListener('mousewheel', _this.setZoomAction);
+            }
+            // Set Mouse Hover Event
         };
         /**
          * Chart를 그리는 함수
          */
         this.render = function () {
-            // 컨테이너 크기 및 Axios 구축
-            // Make SVG Container
-            _this.setSVGElement();
-            // 1. Set Padding
+            // Set SVG Padding
             _this.setSVGPadding();
+            // Set SVG Container
+            _this.setSVGElement();
             // Draw X and Y Label
             _this.setLabel();
             // Draw Legend
@@ -501,9 +511,6 @@ var Chart = /** @class */ (function () {
             _this.setInteraction();
         };
         var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels, _b = data.zoom, zoom = _b === void 0 ? false : _b, showDataCount = data.showDataCount, showLabelCount = data.showLabelCount;
-        this.chart = this.createSvgElement('svg', [
-            { property: 'id', value: 'flowbit_svg' },
-        ]);
         this.targetId = targetId;
         this.width = size.width;
         this.hegiht = size.height;
@@ -512,9 +519,6 @@ var Chart = /** @class */ (function () {
         this.labels = labels;
         this.xAxisCount = labels.length;
         this.maxChartDataCount = Math.max.apply(Math, datas.map(function (data) { return data.data.length; }));
-        this.customColorDefs = this.createSvgElement('defs', [
-            { property: 'class', value: 'customColor' },
-        ]);
         // 줌인 줌아웃 기능 활성화
         if (zoom) {
             this.showDataCount = showDataCount ? showDataCount : this.xAxisCount;
@@ -525,7 +529,11 @@ var Chart = /** @class */ (function () {
         }
         // 줌인 줌 아웃 기능이 활성화 여부가 결정된 이후에 실행시켜야 함
         this.setMinMaxData();
-        this.appendToChart(this.customColorDefs);
+        this.chart = this.createSvgElement('svg', [
+            { property: 'id', value: 'flowbit_svg' },
+            { property: 'xmlns', value: 'http://www.w3.org/2000/svg' },
+            { property: 'viewBox', value: "0 0 ".concat(this.width, " ").concat(this.hegiht) },
+        ]);
         (_a = this.getTarget()) === null || _a === void 0 ? void 0 : _a.appendChild(this.chart);
     }
     /**
@@ -596,7 +604,7 @@ var Chart = /** @class */ (function () {
                 { property: 'id', value: randomId },
             ]);
         }
-        this.customColorDefs.append(colorSvgElement);
+        this.customColorContainer.append(colorSvgElement);
         return randomId;
     };
     /**
