@@ -28,6 +28,8 @@ interface ChartDataType {
     legend?: HTMLElement | Element;
     lastPoint?: HTMLElement | Element;
   };
+  // border 사용자 지정 색깔 ID(Defs의 ID 값)
+  borderCustomColorId?: string;
   // 기본 color
   color?: string;
   // 차트 라인의 두께
@@ -573,7 +575,8 @@ class Chart {
 
     // SET Poly Line
     for (let i = 0; i < this.datas.length; i++) {
-      const { data, customColor, width } = this.datas[i];
+      let { data, customColor, width, borderCustomColorId, color } =
+        this.datas[i];
       let pointList: string[] = [];
 
       // 가장 긴 데이터 리스트와의 길이 차이
@@ -606,11 +609,10 @@ class Chart {
       // set color
       // let customColor = data.customColor().border;``
       // Todo Change objectBoundingBox To userSpaceOnUse
-      let borderCustomColor = '';
       if (customColor) {
         let customColorElement = customColor().border;
         if (customColorElement) {
-          borderCustomColor = this.setCustomColor(
+          borderCustomColorId = this.setCustomColor(
             customColorElement,
             {
               x1: `${this.padding.left}`,
@@ -629,12 +631,8 @@ class Chart {
         {
           property: 'stroke',
           value: (() => {
-            let color: string | undefined;
-            if (borderCustomColor !== '') {
-              color = `url('#${borderCustomColor}')`;
-            } else {
-              // eslint-disable-next-line no-self-assign
-              color = color;
+            if (borderCustomColorId) {
+              color = `url('#${borderCustomColorId}')`;
             }
             return color === undefined ? this.defaultColor : color;
           })(),
@@ -668,7 +666,6 @@ class Chart {
         {
           property: 'fill',
           value: (() => {
-            let color: string | undefined;
             if (lastPointCustomColor !== '') {
               color = `url('#${lastPointCustomColor}')`;
             } else {

@@ -266,7 +266,7 @@ var Chart = /** @class */ (function () {
             ]);
             gTagOfPolyLine.classList.add('datas');
             var _loop_1 = function (i) {
-                var _a = _this.datas[i], data = _a.data, customColor = _a.customColor, width = _a.width;
+                var _a = _this.datas[i], data = _a.data, customColor = _a.customColor, width = _a.width, borderCustomColorId = _a.borderCustomColorId, color = _a.color;
                 var pointList = [];
                 // 가장 긴 데이터 리스트와의 길이 차이
                 var diff = _this.maxChartDataCount - data.length;
@@ -290,11 +290,10 @@ var Chart = /** @class */ (function () {
                 // set color
                 // let customColor = data.customColor().border;``
                 // Todo Change objectBoundingBox To userSpaceOnUse
-                var borderCustomColor = '';
                 if (customColor) {
                     var customColorElement = customColor().border;
                     if (customColorElement) {
-                        borderCustomColor = _this.setCustomColor(customColorElement, {
+                        borderCustomColorId = _this.setCustomColor(customColorElement, {
                             x1: "".concat(_this.padding.left),
                             y1: "".concat(Math.min.apply(Math, yList)),
                             x2: "".concat(_this.padding.left),
@@ -308,13 +307,8 @@ var Chart = /** @class */ (function () {
                     {
                         property: 'stroke',
                         value: (function () {
-                            var color;
-                            if (borderCustomColor !== '') {
-                                color = "url('#".concat(borderCustomColor, "')");
-                            }
-                            else {
-                                // eslint-disable-next-line no-self-assign
-                                color = color;
+                            if (borderCustomColorId) {
+                                color = "url('#".concat(borderCustomColorId, "')");
                             }
                             return color === undefined ? _this.defaultColor : color;
                         })(),
@@ -345,7 +339,6 @@ var Chart = /** @class */ (function () {
                     {
                         property: 'fill',
                         value: (function () {
-                            var color;
                             if (lastPointCustomColor !== '') {
                                 color = "url('#".concat(lastPointCustomColor, "')");
                             }
