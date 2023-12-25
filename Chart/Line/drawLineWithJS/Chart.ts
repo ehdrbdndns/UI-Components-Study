@@ -59,7 +59,7 @@ class Chart {
   private axiosContainer: SVGSVGElement;
   private mouseEventAreaContainer: SVGSVGElement;
   private hoverGuidLineContainer: SVGSVGElement;
-  private hoverPointContainer: SVGSVGElement;
+  private hoverPointsContainer: SVGSVGElement;
 
   private svgNs: string = 'http://www.w3.org/2000/svg';
 
@@ -335,26 +335,30 @@ class Chart {
     // Creat Hover guideLine Container For Chart
     this.hoverGuidLineContainer = this.createSvgElement('path', [
       { property: 'd', value: '' },
-      {
-        property: 'stroke',
-        value: this.guidLineColor,
-      },
-      {
-        property: 'stroke-width',
-        value: this.guidLineWidth,
-      },
-      {
-        property: 'visibility',
-        value: 'hidden',
-      },
-      {
-        property: 'id',
-        value: 'flowbit_hoverLine',
-      },
+      { property: 'stroke', value: this.guidLineColor },
+      { property: 'stroke-width', value: this.guidLineWidth },
+      { property: 'visibility', value: 'hidden' },
+      { property: 'id', value: 'flowbit_hoverLine' },
     ]);
 
     // Create Hover Data Point(Circle) Container For Chart
-    this.hoverPointContainer = this.createSvgElement('g');
+    this.hoverPointsContainer = this.createSvgElement('g', [
+      { property: 'id', value: 'flowbit_hoverPoint' },
+      { property: 'visibility', value: 'hidden' },
+    ]);
+    this.datas.forEach((_, i) => {
+      const point = this.createSvgElement('circle', [
+        { property: 'id', value: `flowbit_hoverPoint${i}` },
+        { property: 'cx', value: '1' },
+        { property: 'cy', value: '1' },
+        { property: 'r', value: '5' },
+        { property: 'fill', value: `${this.backgrondColor}` },
+        { property: 'stroke-width', value: '2' },
+        { property: 'stroke', value: '#fff' },
+      ]);
+
+      this.appendChilds(this.hoverPointsContainer, [point]);
+    });
 
     // Create Mouse Event Area Container For Chart
     this.mouseEventAreaContainer = this.createSvgElement('rect', [
@@ -383,7 +387,7 @@ class Chart {
     this.appendToChart(this.guideLineContainer);
     this.appendToChart(this.datasContainer);
     this.appendToChart(this.hoverGuidLineContainer);
-    this.appendToChart(this.hoverPointContainer);
+    this.appendToChart(this.hoverPointsContainer);
     this.appendToChart(this.axiosContainer);
     this.appendToChart(this.mouseEventAreaContainer);
   };
@@ -575,8 +579,7 @@ class Chart {
 
     // SET Poly Line
     for (let i = 0; i < this.datas.length; i++) {
-      let { data, customColor, width, borderCustomColorId, color } =
-        this.datas[i];
+      let { data, customColor, width, color } = this.datas[i];
       let pointList: string[] = [];
 
       // 가장 긴 데이터 리스트와의 길이 차이
@@ -612,7 +615,7 @@ class Chart {
       if (customColor) {
         let customColorElement = customColor().border;
         if (customColorElement) {
-          borderCustomColorId = this.setCustomColor(
+          this.datas[i].borderCustomColorId = this.setCustomColor(
             customColorElement,
             {
               x1: `${this.padding.left}`,
@@ -631,8 +634,8 @@ class Chart {
         {
           property: 'stroke',
           value: (() => {
-            if (borderCustomColorId) {
-              color = `url('#${borderCustomColorId}')`;
+            if (this.datas[i].borderCustomColorId) {
+              color = `url('#${this.datas[i].borderCustomColorId}')`;
             }
             return color === undefined ? this.defaultColor : color;
           })(),
@@ -741,7 +744,6 @@ class Chart {
       ]);
       text.append(data.label);
 
-      // let customColor = data.customColor?.(this.chart, this.svgNs);
       const bbox = this.getBBox(text);
       const textLength = bbox.width;
 
@@ -827,22 +829,55 @@ class Chart {
     const index = Math.abs(Math.round((this.showDataCount - 1) * persent));
 
     // 2. Draw Hover line Like Y Axios Guidline
-    const xOfGuidLine =
+    const xPositionOfIndex =
       (index / (this.showDataCount - 1)) *
         (this.width - this.padding.left - this.padding.right) +
       this.padding.left;
-    const pathOfGuidLine = `M ${xOfGuidLine},${
+    const yPositionOfGuidLine = `M ${xPositionOfIndex},${
       this.padding.top
-    }L${xOfGuidLine},${this.hegiht - this.padding.bottom}`;
-    this.hoverGuidLineContainer.setAttribute('d', pathOfGuidLine);
+    }L${xPositionOfIndex},${this.hegiht - this.padding.bottom}`;
+    this.hoverGuidLineContainer.setAttribute('d', yPositionOfGuidLine);
     this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
 
     // 3. Point from data line
-    const gTagOfDataPoint = this.createSvgElement('g');
     this.datas.forEach((_, i) => {
-      const { data } = _;
-    });
+      const { data, color, borderCustomColorId } = _;
+      const diff = this.maxChartDataCount - data.length;
+      const dataOfIndex = data[data.length - this.showDataCount + index + diff];
+      const hoverPoint = document.getElementById(`flowbit_hoverPoint${i}`);
 
+      this.hoverPointsContainer.setAttribute('visibility', 'visible');
+
+      // data가 전체 길이상에 존재하지 않을 경우에는 point를 생성하지 않음
+      if (dataOfIndex === undefined) {
+        hoverPoint?.setAttribute('cx', '0');
+        hoverPoint?.setAttribute('cy', '0');
+        return;
+      }
+
+      // get yPosition Of Point
+      const yPositionOfIndex =
+        this.hegiht -
+        this.padding.top -
+        this.padding.bottom -
+        (this.hegiht - this.padding.bottom - this.padding.top) *
+          ((dataOfIndex - this.minData) / (this.maxData - this.minData)) +
+        this.padding.top;
+
+      // Set Point Property
+      hoverPoint?.setAttribute('cx', `${xPositionOfIndex}`);
+      hoverPoint?.setAttribute('cy', `${yPositionOfIndex}`);
+      hoverPoint?.setAttribute(
+        'stroke',
+        (() => {
+          return borderCustomColorId
+            ? `url(#${borderCustomColorId})`
+            : color
+            ? color
+            : this.defaultColor;
+        })()
+      );
+    });
     // 4. Pop info dialog for datas
   };
 
@@ -868,6 +903,7 @@ class Chart {
     );
     this.mouseEventAreaContainer.addEventListener('mouseleave', () => {
       this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
+      this.hoverPointsContainer.setAttribute('visibility', 'hidden');
     });
   };
 

@@ -62,25 +62,28 @@ var Chart = /** @class */ (function () {
             // Creat Hover guideLine Container For Chart
             _this.hoverGuidLineContainer = _this.createSvgElement('path', [
                 { property: 'd', value: '' },
-                {
-                    property: 'stroke',
-                    value: _this.guidLineColor,
-                },
-                {
-                    property: 'stroke-width',
-                    value: _this.guidLineWidth,
-                },
-                {
-                    property: 'visibility',
-                    value: 'hidden',
-                },
-                {
-                    property: 'id',
-                    value: 'flowbit_hoverLine',
-                },
+                { property: 'stroke', value: _this.guidLineColor },
+                { property: 'stroke-width', value: _this.guidLineWidth },
+                { property: 'visibility', value: 'hidden' },
+                { property: 'id', value: 'flowbit_hoverLine' },
             ]);
             // Create Hover Data Point(Circle) Container For Chart
-            _this.hoverPointContainer = _this.createSvgElement('g');
+            _this.hoverPointsContainer = _this.createSvgElement('g', [
+                { property: 'id', value: 'flowbit_hoverPoint' },
+                { property: 'visibility', value: 'hidden' },
+            ]);
+            _this.datas.forEach(function (_, i) {
+                var point = _this.createSvgElement('circle', [
+                    { property: 'id', value: "flowbit_hoverPoint".concat(i) },
+                    { property: 'cx', value: '1' },
+                    { property: 'cy', value: '1' },
+                    { property: 'r', value: '5' },
+                    { property: 'fill', value: "".concat(_this.backgrondColor) },
+                    { property: 'stroke-width', value: '2' },
+                    { property: 'stroke', value: '#fff' },
+                ]);
+                _this.appendChilds(_this.hoverPointsContainer, [point]);
+            });
             // Create Mouse Event Area Container For Chart
             _this.mouseEventAreaContainer = _this.createSvgElement('rect', [
                 { property: 'x', value: "".concat(_this.padding.left) },
@@ -107,7 +110,7 @@ var Chart = /** @class */ (function () {
             _this.appendToChart(_this.guideLineContainer);
             _this.appendToChart(_this.datasContainer);
             _this.appendToChart(_this.hoverGuidLineContainer);
-            _this.appendToChart(_this.hoverPointContainer);
+            _this.appendToChart(_this.hoverPointsContainer);
             _this.appendToChart(_this.axiosContainer);
             _this.appendToChart(_this.mouseEventAreaContainer);
         };
@@ -266,7 +269,7 @@ var Chart = /** @class */ (function () {
             ]);
             gTagOfPolyLine.classList.add('datas');
             var _loop_1 = function (i) {
-                var _a = _this.datas[i], data = _a.data, customColor = _a.customColor, width = _a.width, borderCustomColorId = _a.borderCustomColorId, color = _a.color;
+                var _a = _this.datas[i], data = _a.data, customColor = _a.customColor, width = _a.width, color = _a.color;
                 var pointList = [];
                 // 가장 긴 데이터 리스트와의 길이 차이
                 var diff = _this.maxChartDataCount - data.length;
@@ -293,7 +296,7 @@ var Chart = /** @class */ (function () {
                 if (customColor) {
                     var customColorElement = customColor().border;
                     if (customColorElement) {
-                        borderCustomColorId = _this.setCustomColor(customColorElement, {
+                        _this.datas[i].borderCustomColorId = _this.setCustomColor(customColorElement, {
                             x1: "".concat(_this.padding.left),
                             y1: "".concat(Math.min.apply(Math, yList)),
                             x2: "".concat(_this.padding.left),
@@ -307,8 +310,8 @@ var Chart = /** @class */ (function () {
                     {
                         property: 'stroke',
                         value: (function () {
-                            if (borderCustomColorId) {
-                                color = "url('#".concat(borderCustomColorId, "')");
+                            if (_this.datas[i].borderCustomColorId) {
+                                color = "url('#".concat(_this.datas[i].borderCustomColorId, "')");
                             }
                             return color === undefined ? _this.defaultColor : color;
                         })(),
@@ -409,7 +412,6 @@ var Chart = /** @class */ (function () {
                     { property: 'dominant-baseline', value: 'middle' },
                 ]);
                 text.append(data.label);
-                // let customColor = data.customColor?.(this.chart, this.svgNs);
                 var bbox = _this.getBBox(text);
                 var textLength = bbox.width;
                 // set color
@@ -490,16 +492,42 @@ var Chart = /** @class */ (function () {
             var persent = mouseX / rect.width;
             var index = Math.abs(Math.round((_this.showDataCount - 1) * persent));
             // 2. Draw Hover line Like Y Axios Guidline
-            var xOfGuidLine = (index / (_this.showDataCount - 1)) *
+            var xPositionOfIndex = (index / (_this.showDataCount - 1)) *
                 (_this.width - _this.padding.left - _this.padding.right) +
                 _this.padding.left;
-            var pathOfGuidLine = "M ".concat(xOfGuidLine, ",").concat(_this.padding.top, "L").concat(xOfGuidLine, ",").concat(_this.hegiht - _this.padding.bottom);
-            _this.hoverGuidLineContainer.setAttribute('d', pathOfGuidLine);
+            var yPositionOfGuidLine = "M ".concat(xPositionOfIndex, ",").concat(_this.padding.top, "L").concat(xPositionOfIndex, ",").concat(_this.hegiht - _this.padding.bottom);
+            _this.hoverGuidLineContainer.setAttribute('d', yPositionOfGuidLine);
             _this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
             // 3. Point from data line
-            var gTagOfDataPoint = _this.createSvgElement('g');
             _this.datas.forEach(function (_, i) {
-                var data = _.data;
+                var data = _.data, color = _.color, borderCustomColorId = _.borderCustomColorId;
+                var diff = _this.maxChartDataCount - data.length;
+                var dataOfIndex = data[data.length - _this.showDataCount + index + diff];
+                var hoverPoint = document.getElementById("flowbit_hoverPoint".concat(i));
+                _this.hoverPointsContainer.setAttribute('visibility', 'visible');
+                // data가 전체 길이상에 존재하지 않을 경우에는 point를 생성하지 않음
+                if (dataOfIndex === undefined) {
+                    hoverPoint === null || hoverPoint === void 0 ? void 0 : hoverPoint.setAttribute('cx', '0');
+                    hoverPoint === null || hoverPoint === void 0 ? void 0 : hoverPoint.setAttribute('cy', '0');
+                    return;
+                }
+                // get yPosition Of Point
+                var yPositionOfIndex = _this.hegiht -
+                    _this.padding.top -
+                    _this.padding.bottom -
+                    (_this.hegiht - _this.padding.bottom - _this.padding.top) *
+                        ((dataOfIndex - _this.minData) / (_this.maxData - _this.minData)) +
+                    _this.padding.top;
+                // Set Point Property
+                hoverPoint === null || hoverPoint === void 0 ? void 0 : hoverPoint.setAttribute('cx', "".concat(xPositionOfIndex));
+                hoverPoint === null || hoverPoint === void 0 ? void 0 : hoverPoint.setAttribute('cy', "".concat(yPositionOfIndex));
+                hoverPoint === null || hoverPoint === void 0 ? void 0 : hoverPoint.setAttribute('stroke', (function () {
+                    return borderCustomColorId
+                        ? "url(#".concat(borderCustomColorId, ")")
+                        : color
+                            ? color
+                            : _this.defaultColor;
+                })());
             });
             // 4. Pop info dialog for datas
         };
@@ -517,6 +545,7 @@ var Chart = /** @class */ (function () {
             _this.mouseEventAreaContainer.addEventListener('mousemove', _this.setMouseHoverAction);
             _this.mouseEventAreaContainer.addEventListener('mouseleave', function () {
                 _this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
+                _this.hoverPointsContainer.setAttribute('visibility', 'hidden');
             });
         };
         /**
