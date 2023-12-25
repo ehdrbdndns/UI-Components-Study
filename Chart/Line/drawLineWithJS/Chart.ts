@@ -110,15 +110,9 @@ class Chart {
     this.xAxisCount = labels.length;
     this.maxChartDataCount = Math.max(...datas.map((data) => data.data.length));
 
-    // 줌인 줌아웃 기능 활성화
-    if (zoom) {
-      this.showDataCount = showDataCount ? showDataCount : this.xAxisCount;
-      this.showLabelCount = showLabelCount
-        ? showLabelCount
-        : this.labels.length;
-
-      this.zoom = zoom;
-    }
+    this.zoom = zoom;
+    this.showDataCount = showDataCount ? showDataCount : this.maxChartDataCount;
+    this.showLabelCount = showLabelCount ? showLabelCount : this.labels.length;
 
     // 줌인 줌 아웃 기능이 활성화 여부가 결정된 이후에 실행시켜야 함
     this.setMinMaxData();
@@ -262,6 +256,8 @@ class Chart {
    * @param min Y 라벨에 표시되는 최소 값
    */
   private setMinMaxData() {
+    let newMax: number = 0;
+    let newMin: number = 0;
     if (this.zoom) {
       // 줌인 줌 아웃 기능 활성화 시에 사용됨
       // Set min, max data for datas
@@ -275,15 +271,16 @@ class Chart {
         newMaxList.push(Math.max(...data.slice(startIndex)));
       });
       // Set average of the range of min and max
-      let newMax = Math.max(...newMaxList);
-      let newMin = Math.min(...newMinList);
-      const averageOfMinMax = (newMax - newMin) / this.yAxisCount;
-      this.maxData = newMax + averageOfMinMax;
-      this.minData = newMin - averageOfMinMax;
+      newMax = Math.max(...newMaxList);
+      newMin = Math.min(...newMinList);
     } else {
-      this.maxData = Math.max(...this.datas.map((data) => data.max));
-      this.minData = Math.min(...this.datas.map((data) => data.min));
+      newMax = Math.max(...this.datas.map((data) => data.max));
+      newMin = Math.min(...this.datas.map((data) => data.min));
     }
+
+    const averageOfMinMax = (newMax - newMin) / this.yAxisCount;
+    this.maxData = newMax + averageOfMinMax;
+    this.minData = newMin - averageOfMinMax;
   }
 
   /**
@@ -568,53 +565,33 @@ class Chart {
     ]);
     gTagOfPolyLine.classList.add('datas');
 
+    // SET Poly Line
     for (let i = 0; i < this.datas.length; i++) {
-      // SET Poly Line
       const { data, customColor, width } = this.datas[i];
-
       let pointList: string[] = [];
-      if (this.zoom) {
-        // 줌인 줌아웃 기능 활성화한 버전
-        // 가장 긴 데이터 리스트와의 길이 차이
-        const diff = this.maxChartDataCount - data.length;
-        for (
-          let j = data.length - this.showDataCount + diff;
-          j < data.length;
-          j++
-        ) {
-          const value = data[j];
-          let x =
-            ((j - (data.length - this.showDataCount + diff)) /
-              (this.showDataCount - 1)) *
-              (this.width - this.padding.left - this.padding.right) +
-            this.padding.left;
-          let y =
-            this.hegiht -
-            this.padding.top -
-            this.padding.bottom -
-            (this.hegiht - this.padding.bottom - this.padding.top) *
-              ((value - this.minData) / (this.maxData - this.minData)) +
-            this.padding.top;
 
-          pointList.push(`${x},${y}`);
-        }
-      } else {
-        // 줌인 줌아웃 기능 비활성화 버전
-        pointList = data.map((value, j) => {
-          let x =
-            (j / this.datas[0].data.length) *
-              (this.width - this.padding.left - this.padding.right) +
-            this.padding.left;
-          let y =
-            this.hegiht -
-            this.padding.top -
-            this.padding.bottom -
-            (this.hegiht - this.padding.bottom - this.padding.top) *
-              ((value - this.minData) / (this.maxData - this.minData)) +
-            this.padding.top;
+      // 가장 긴 데이터 리스트와의 길이 차이
+      const diff = this.maxChartDataCount - data.length;
+      for (
+        let j = data.length - this.showDataCount + diff;
+        j < data.length;
+        j++
+      ) {
+        const value = data[j];
+        let x =
+          ((j - (data.length - this.showDataCount + diff)) /
+            (this.showDataCount - 1)) *
+            (this.width - this.padding.left - this.padding.right) +
+          this.padding.left;
+        let y =
+          this.hegiht -
+          this.padding.top -
+          this.padding.bottom -
+          (this.hegiht - this.padding.bottom - this.padding.top) *
+            ((value - this.minData) / (this.maxData - this.minData)) +
+          this.padding.top;
 
-          return `${x},${y}`;
-        });
+        pointList.push(`${x},${y}`);
       }
 
       // set color
@@ -845,6 +822,7 @@ class Chart {
     this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
 
     // 3. Point from data line
+
     // 4. Pop info dialog for datas
   };
 

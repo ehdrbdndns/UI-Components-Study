@@ -261,42 +261,23 @@ var Chart = /** @class */ (function () {
             ]);
             gTagOfPolyLine.classList.add('datas');
             var _loop_1 = function (i) {
-                // SET Poly Line
                 var _a = _this.datas[i], data = _a.data, customColor = _a.customColor, width = _a.width;
                 var pointList = [];
-                if (_this.zoom) {
-                    // 줌인 줌아웃 기능 활성화한 버전
-                    // 가장 긴 데이터 리스트와의 길이 차이
-                    var diff = _this.maxChartDataCount - data.length;
-                    for (var j = data.length - _this.showDataCount + diff; j < data.length; j++) {
-                        var value = data[j];
-                        var x = ((j - (data.length - _this.showDataCount + diff)) /
-                            (_this.showDataCount - 1)) *
-                            (_this.width - _this.padding.left - _this.padding.right) +
-                            _this.padding.left;
-                        var y = _this.hegiht -
-                            _this.padding.top -
-                            _this.padding.bottom -
-                            (_this.hegiht - _this.padding.bottom - _this.padding.top) *
-                                ((value - _this.minData) / (_this.maxData - _this.minData)) +
-                            _this.padding.top;
-                        pointList.push("".concat(x, ",").concat(y));
-                    }
-                }
-                else {
-                    // 줌인 줌아웃 기능 비활성화 버전
-                    pointList = data.map(function (value, j) {
-                        var x = (j / _this.datas[0].data.length) *
-                            (_this.width - _this.padding.left - _this.padding.right) +
-                            _this.padding.left;
-                        var y = _this.hegiht -
-                            _this.padding.top -
-                            _this.padding.bottom -
-                            (_this.hegiht - _this.padding.bottom - _this.padding.top) *
-                                ((value - _this.minData) / (_this.maxData - _this.minData)) +
-                            _this.padding.top;
-                        return "".concat(x, ",").concat(y);
-                    });
+                // 가장 긴 데이터 리스트와의 길이 차이
+                var diff = _this.maxChartDataCount - data.length;
+                for (var j = data.length - _this.showDataCount + diff; j < data.length; j++) {
+                    var value = data[j];
+                    var x = ((j - (data.length - _this.showDataCount + diff)) /
+                        (_this.showDataCount - 1)) *
+                        (_this.width - _this.padding.left - _this.padding.right) +
+                        _this.padding.left;
+                    var y = _this.hegiht -
+                        _this.padding.top -
+                        _this.padding.bottom -
+                        (_this.hegiht - _this.padding.bottom - _this.padding.top) *
+                            ((value - _this.minData) / (_this.maxData - _this.minData)) +
+                        _this.padding.top;
+                    pointList.push("".concat(x, ",").concat(y));
                 }
                 // set color
                 // let customColor = data.customColor().border;
@@ -391,6 +372,7 @@ var Chart = /** @class */ (function () {
                 ]);
                 _this.appendChilds(gTagOfPolyLine, [polyLine, lastPoint]);
             };
+            // SET Poly Line
             for (var i = 0; i < _this.datas.length; i++) {
                 _loop_1(i);
             }
@@ -557,14 +539,9 @@ var Chart = /** @class */ (function () {
         this.labels = labels;
         this.xAxisCount = labels.length;
         this.maxChartDataCount = Math.max.apply(Math, datas.map(function (data) { return data.data.length; }));
-        // 줌인 줌아웃 기능 활성화
-        if (zoom) {
-            this.showDataCount = showDataCount ? showDataCount : this.xAxisCount;
-            this.showLabelCount = showLabelCount
-                ? showLabelCount
-                : this.labels.length;
-            this.zoom = zoom;
-        }
+        this.zoom = zoom;
+        this.showDataCount = showDataCount ? showDataCount : this.maxChartDataCount;
+        this.showLabelCount = showLabelCount ? showLabelCount : this.labels.length;
         // 줌인 줌 아웃 기능이 활성화 여부가 결정된 이후에 실행시켜야 함
         this.setMinMaxData();
         this.chart = this.createSvgElement('svg', [
@@ -683,6 +660,8 @@ var Chart = /** @class */ (function () {
      */
     Chart.prototype.setMinMaxData = function () {
         var _this = this;
+        var newMax = 0;
+        var newMin = 0;
         if (this.zoom) {
             // 줌인 줌 아웃 기능 활성화 시에 사용됨
             // Set min, max data for datas
@@ -695,16 +674,16 @@ var Chart = /** @class */ (function () {
                 newMaxList_1.push(Math.max.apply(Math, data.slice(startIndex)));
             });
             // Set average of the range of min and max
-            var newMax = Math.max.apply(Math, newMaxList_1);
-            var newMin = Math.min.apply(Math, newMinList_1);
-            var averageOfMinMax = (newMax - newMin) / this.yAxisCount;
-            this.maxData = newMax + averageOfMinMax;
-            this.minData = newMin - averageOfMinMax;
+            newMax = Math.max.apply(Math, newMaxList_1);
+            newMin = Math.min.apply(Math, newMinList_1);
         }
         else {
-            this.maxData = Math.max.apply(Math, this.datas.map(function (data) { return data.max; }));
-            this.minData = Math.min.apply(Math, this.datas.map(function (data) { return data.min; }));
+            newMax = Math.max.apply(Math, this.datas.map(function (data) { return data.max; }));
+            newMin = Math.min.apply(Math, this.datas.map(function (data) { return data.min; }));
         }
+        var averageOfMinMax = (newMax - newMin) / this.yAxisCount;
+        this.maxData = newMax + averageOfMinMax;
+        this.minData = newMin - averageOfMinMax;
     };
     return Chart;
 }());
