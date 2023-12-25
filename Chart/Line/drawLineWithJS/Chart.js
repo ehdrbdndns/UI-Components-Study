@@ -22,6 +22,8 @@ var Chart = /** @class */ (function () {
         this.zoom = false; // 줌인, 줌아웃 기능 추가 여부
         this.showDataCount = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
         this.showLabelCount = 0; // 화면에 보여줄 라벨 개수 (zoom 모드에서만 사용하는 변수)
+        this.guidLineColor = '#797979';
+        this.guidLineWidth = '.5px';
         /**
          * Chart의 Padding(상하좌우)를 설정하는 함수
          */
@@ -54,8 +56,28 @@ var Chart = /** @class */ (function () {
             _this.datasContainer = _this.createSvgElement('g');
             // Create Guide Line Container For Chart
             _this.guideLineContainer = _this.createSvgElement('g');
-            // Create Hover Container For Chart
-            _this.hoverContainer = _this.createSvgElement('rect', [
+            // Creat Hover guideLine Container For Chart
+            _this.hoverGuidLineContainer = _this.createSvgElement('path', [
+                { property: 'd', value: '' },
+                {
+                    property: 'stroke',
+                    value: _this.guidLineColor,
+                },
+                {
+                    property: 'stroke-width',
+                    value: _this.guidLineWidth,
+                },
+                {
+                    property: 'visibility',
+                    value: 'hidden',
+                },
+                {
+                    property: 'id',
+                    value: 'flowbit_hoverLine',
+                },
+            ]);
+            // Create Mouse Event Area Container For Chart
+            _this.mouseEventAreaContainer = _this.createSvgElement('rect', [
                 { property: 'x', value: "".concat(_this.padding.left) },
                 { property: 'y', value: "".concat(_this.padding.top) },
                 {
@@ -68,19 +90,20 @@ var Chart = /** @class */ (function () {
                 },
                 {
                     property: 'id',
-                    value: 'flowbit_hover',
+                    value: 'flowbit_eventArea',
                 },
             ]);
-            _this.hoverContainer.style.cursor =
+            _this.mouseEventAreaContainer.style.cursor =
                 'url("https://www.bithumb.com/react/charting_library/sta…es/crosshair.6c091f7d5427d0c5e6d9dc3a90eb2b20.cur"),crosshair';
-            _this.hoverContainer.style.opacity = '0';
+            _this.mouseEventAreaContainer.style.opacity = '0';
             _this.appendToChart(_this.customColorContainer);
             _this.appendToChart(_this.labelContainer);
             _this.appendToChart(_this.legendContainer);
             _this.appendToChart(_this.guideLineContainer);
             _this.appendToChart(_this.datasContainer);
+            _this.appendToChart(_this.hoverGuidLineContainer);
             _this.appendToChart(_this.axiosContainer);
-            _this.appendToChart(_this.hoverContainer);
+            _this.appendToChart(_this.mouseEventAreaContainer);
         };
         /**
          * X축 Y축 선을 긋는 함수
@@ -471,9 +494,18 @@ var Chart = /** @class */ (function () {
          * Chart의 Mouse Hover 기능을 설정하는 함수
          * 마우스를 올린 지점에 데이터의 Info 창을 보여줌
          */
-        this.setMouseHoverAction = function () {
-            // 1. Get X, Y Coordination from mouse poistion
+        this.setMouseHoverAction = function (e) {
+            var rect = e.target.getBoundingClientRect();
+            var mouseX = e.clientX - rect.left;
+            var persent = mouseX / rect.width;
+            var index = Math.abs(Math.round((_this.showDataCount - 1) * persent));
             // 2. Draw Hover line Like Y Axios Guidline
+            var xOfGuidLine = (index / (_this.showDataCount - 1)) *
+                (_this.width - _this.padding.left - _this.padding.right) +
+                _this.padding.left;
+            var pathOfGuidLine = "M ".concat(xOfGuidLine, ",").concat(_this.padding.top, "L").concat(xOfGuidLine, ",").concat(_this.hegiht - _this.padding.bottom);
+            _this.hoverGuidLineContainer.setAttribute('d', pathOfGuidLine);
+            _this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
             // 3. Point to data line
             // 4. Pop info dialog for datas
         };
@@ -485,9 +517,13 @@ var Chart = /** @class */ (function () {
             // Set Scroll Event
             // Zoom in, out 기능
             if (_this.zoom) {
-                _this.hoverContainer.addEventListener('mousewheel', _this.setZoomAction);
+                _this.mouseEventAreaContainer.addEventListener('mousewheel', _this.setZoomAction);
             }
             // Set Mouse Hover Event
+            _this.mouseEventAreaContainer.addEventListener('mousemove', _this.setMouseHoverAction);
+            _this.mouseEventAreaContainer.addEventListener('mouseleave', function () {
+                _this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
+            });
         };
         /**
          * Chart를 그리는 함수

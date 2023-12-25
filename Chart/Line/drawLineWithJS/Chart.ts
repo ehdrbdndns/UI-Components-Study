@@ -54,7 +54,8 @@ class Chart {
   private legendContainer: SVGSVGElement;
   private guideLineContainer: SVGSVGElement;
   private axiosContainer: SVGSVGElement;
-  private hoverContainer: SVGSVGElement;
+  private mouseEventAreaContainer: SVGSVGElement;
+  private hoverGuidLineContainer: SVGSVGElement;
 
   private svgNs: string = 'http://www.w3.org/2000/svg';
 
@@ -81,6 +82,9 @@ class Chart {
   private zoom = false; // 줌인, 줌아웃 기능 추가 여부
   private showDataCount: number = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
   private showLabelCount: number = 0; // 화면에 보여줄 라벨 개수 (zoom 모드에서만 사용하는 변수)
+
+  private guidLineColor: string = '#797979';
+  private guidLineWidth: string = '.5px';
 
   constructor(data: ChartType) {
     const {
@@ -321,8 +325,29 @@ class Chart {
     // Create Guide Line Container For Chart
     this.guideLineContainer = this.createSvgElement('g');
 
-    // Create Hover Container For Chart
-    this.hoverContainer = this.createSvgElement('rect', [
+    // Creat Hover guideLine Container For Chart
+    this.hoverGuidLineContainer = this.createSvgElement('path', [
+      { property: 'd', value: '' },
+      {
+        property: 'stroke',
+        value: this.guidLineColor,
+      },
+      {
+        property: 'stroke-width',
+        value: this.guidLineWidth,
+      },
+      {
+        property: 'visibility',
+        value: 'hidden',
+      },
+      {
+        property: 'id',
+        value: 'flowbit_hoverLine',
+      },
+    ]);
+
+    // Create Mouse Event Area Container For Chart
+    this.mouseEventAreaContainer = this.createSvgElement('rect', [
       { property: 'x', value: `${this.padding.left}` },
       { property: 'y', value: `${this.padding.top}` },
       {
@@ -335,20 +360,21 @@ class Chart {
       },
       {
         property: 'id',
-        value: 'flowbit_hover',
+        value: 'flowbit_eventArea',
       },
     ]);
-    this.hoverContainer.style.cursor =
+    this.mouseEventAreaContainer.style.cursor =
       'url("https://www.bithumb.com/react/charting_library/sta…es/crosshair.6c091f7d5427d0c5e6d9dc3a90eb2b20.cur"),crosshair';
-    this.hoverContainer.style.opacity = '0';
+    this.mouseEventAreaContainer.style.opacity = '0';
 
     this.appendToChart(this.customColorContainer);
     this.appendToChart(this.labelContainer);
     this.appendToChart(this.legendContainer);
     this.appendToChart(this.guideLineContainer);
     this.appendToChart(this.datasContainer);
+    this.appendToChart(this.hoverGuidLineContainer);
     this.appendToChart(this.axiosContainer);
-    this.appendToChart(this.hoverContainer);
+    this.appendToChart(this.mouseEventAreaContainer);
   };
 
   /**
@@ -795,9 +821,23 @@ class Chart {
    * Chart의 Mouse Hover 기능을 설정하는 함수
    * 마우스를 올린 지점에 데이터의 Info 창을 보여줌
    */
-  private setMouseHoverAction = () => {
-    // 1. Get X, Y Coordination from mouse poistion
+  private setMouseHoverAction = (e: any) => {
+    const rect = e.target.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const persent = mouseX / rect.width;
+    const index = Math.abs(Math.round((this.showDataCount - 1) * persent));
+
     // 2. Draw Hover line Like Y Axios Guidline
+    const xOfGuidLine =
+      (index / (this.showDataCount - 1)) *
+        (this.width - this.padding.left - this.padding.right) +
+      this.padding.left;
+    const pathOfGuidLine = `M ${xOfGuidLine},${
+      this.padding.top
+    }L${xOfGuidLine},${this.hegiht - this.padding.bottom}`;
+    this.hoverGuidLineContainer.setAttribute('d', pathOfGuidLine);
+    this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
+
     // 3. Point to data line
     // 4. Pop info dialog for datas
   };
@@ -811,10 +851,20 @@ class Chart {
     // Set Scroll Event
     // Zoom in, out 기능
     if (this.zoom) {
-      this.hoverContainer.addEventListener('mousewheel', this.setZoomAction);
+      this.mouseEventAreaContainer.addEventListener(
+        'mousewheel',
+        this.setZoomAction
+      );
     }
 
     // Set Mouse Hover Event
+    this.mouseEventAreaContainer.addEventListener(
+      'mousemove',
+      this.setMouseHoverAction
+    );
+    this.mouseEventAreaContainer.addEventListener('mouseleave', () => {
+      this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
+    });
   };
 
   /**
