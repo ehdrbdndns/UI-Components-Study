@@ -16,8 +16,10 @@ var Chart = /** @class */ (function () {
         this.svgNs = 'http://www.w3.org/2000/svg';
         this.padding = { bottom: 0, left: 0, top: 0, right: 0 };
         this.yAxisCount = 10; // y축에서 표현되는 라벨의 개수
-        this.maxData = 0; // y축에서 표현되는 가장 큰 수
-        this.minData = 0; // y축에서 표현되는 가장 작은 수
+        this.maxDataForDatas = 0; // 데이터 중 가장 큰 값
+        this.minDataForDatas = 0; // 데이터 중 가장 작은 값
+        this.maxData = 0; // y축에서 표현되는 가장 큰 수 (maxDataForDatas - 평균 값)
+        this.minData = 0; // y축에서 표현되는 가장 작은 수 (minDataForDatas - 평균 값)
         this.defaultColor = '#fff'; // data Line의 기본 색상
         this.backgrondColor = '#48519B'; // Chart 배경 색상
         this.zoom = false; // 줌인, 줌아웃 기능 추가 여부
@@ -77,6 +79,8 @@ var Chart = /** @class */ (function () {
                     value: 'flowbit_hoverLine',
                 },
             ]);
+            // Create Hover Data Point(Circle) Container For Chart
+            _this.hoverPointContainer = _this.createSvgElement('g');
             // Create Mouse Event Area Container For Chart
             _this.mouseEventAreaContainer = _this.createSvgElement('rect', [
                 { property: 'x', value: "".concat(_this.padding.left) },
@@ -103,6 +107,7 @@ var Chart = /** @class */ (function () {
             _this.appendToChart(_this.guideLineContainer);
             _this.appendToChart(_this.datasContainer);
             _this.appendToChart(_this.hoverGuidLineContainer);
+            _this.appendToChart(_this.hoverPointContainer);
             _this.appendToChart(_this.axiosContainer);
             _this.appendToChart(_this.mouseEventAreaContainer);
         };
@@ -265,6 +270,8 @@ var Chart = /** @class */ (function () {
                 var pointList = [];
                 // 가장 긴 데이터 리스트와의 길이 차이
                 var diff = _this.maxChartDataCount - data.length;
+                // custom Color의 y 좌표 값을 구하기 위해 사용되는 변수
+                var yList = [];
                 for (var j = data.length - _this.showDataCount + diff; j < data.length; j++) {
                     var value = data[j];
                     var x = ((j - (data.length - _this.showDataCount + diff)) /
@@ -277,15 +284,22 @@ var Chart = /** @class */ (function () {
                         (_this.hegiht - _this.padding.bottom - _this.padding.top) *
                             ((value - _this.minData) / (_this.maxData - _this.minData)) +
                         _this.padding.top;
+                    yList.push(y);
                     pointList.push("".concat(x, ",").concat(y));
                 }
                 // set color
-                // let customColor = data.customColor().border;
+                // let customColor = data.customColor().border;``
+                // Todo Change objectBoundingBox To userSpaceOnUse
                 var borderCustomColor = '';
                 if (customColor) {
                     var customColorElement = customColor().border;
                     if (customColorElement) {
-                        borderCustomColor = _this.setCustomColor(customColorElement);
+                        borderCustomColor = _this.setCustomColor(customColorElement, {
+                            x1: "".concat(_this.padding.left),
+                            y1: "".concat(Math.min.apply(Math, yList)),
+                            x2: "".concat(_this.padding.left),
+                            y2: "".concat(Math.max.apply(Math, yList)),
+                        }, 'userSpaceOnUse');
                     }
                 }
                 // draw polylines
@@ -490,6 +504,10 @@ var Chart = /** @class */ (function () {
             _this.hoverGuidLineContainer.setAttribute('d', pathOfGuidLine);
             _this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
             // 3. Point from data line
+            var gTagOfDataPoint = _this.createSvgElement('g');
+            _this.datas.forEach(function (_, i) {
+                var data = _.data;
+            });
             // 4. Pop info dialog for datas
         };
         /**
@@ -660,8 +678,6 @@ var Chart = /** @class */ (function () {
      */
     Chart.prototype.setMinMaxData = function () {
         var _this = this;
-        var newMax = 0;
-        var newMin = 0;
         if (this.zoom) {
             // 줌인 줌 아웃 기능 활성화 시에 사용됨
             // Set min, max data for datas
@@ -674,16 +690,16 @@ var Chart = /** @class */ (function () {
                 newMaxList_1.push(Math.max.apply(Math, data.slice(startIndex)));
             });
             // Set average of the range of min and max
-            newMax = Math.max.apply(Math, newMaxList_1);
-            newMin = Math.min.apply(Math, newMinList_1);
+            this.maxDataForDatas = Math.max.apply(Math, newMaxList_1);
+            this.minDataForDatas = Math.min.apply(Math, newMinList_1);
         }
         else {
-            newMax = Math.max.apply(Math, this.datas.map(function (data) { return data.max; }));
-            newMin = Math.min.apply(Math, this.datas.map(function (data) { return data.min; }));
+            this.maxDataForDatas = Math.max.apply(Math, this.datas.map(function (data) { return data.max; }));
+            this.minDataForDatas = Math.min.apply(Math, this.datas.map(function (data) { return data.min; }));
         }
-        var averageOfMinMax = (newMax - newMin) / this.yAxisCount;
-        this.maxData = newMax + averageOfMinMax;
-        this.minData = newMin - averageOfMinMax;
+        var averageOfMinMax = (this.maxDataForDatas - this.minDataForDatas) / this.yAxisCount;
+        this.maxData = this.maxDataForDatas + averageOfMinMax;
+        this.minData = this.minDataForDatas - averageOfMinMax;
     };
     return Chart;
 }());

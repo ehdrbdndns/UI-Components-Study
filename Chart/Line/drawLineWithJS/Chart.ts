@@ -57,6 +57,7 @@ class Chart {
   private axiosContainer: SVGSVGElement;
   private mouseEventAreaContainer: SVGSVGElement;
   private hoverGuidLineContainer: SVGSVGElement;
+  private hoverPointContainer: SVGSVGElement;
 
   private svgNs: string = 'http://www.w3.org/2000/svg';
 
@@ -75,8 +76,10 @@ class Chart {
 
   private maxChartDataCount: number; // 차트 데이터 개수 중 가장 큰 수
 
-  private maxData: number = 0; // y축에서 표현되는 가장 큰 수
-  private minData: number = 0; // y축에서 표현되는 가장 작은 수
+  private maxDataForDatas: number = 0; // 데이터 중 가장 큰 값
+  private minDataForDatas: number = 0; // 데이터 중 가장 작은 값
+  private maxData: number = 0; // y축에서 표현되는 가장 큰 수 (maxDataForDatas - 평균 값)
+  private minData: number = 0; // y축에서 표현되는 가장 작은 수 (minDataForDatas - 평균 값)
 
   private defaultColor: string = '#fff'; // data Line의 기본 색상
   private backgrondColor: string = '#48519B'; // Chart 배경 색상
@@ -256,8 +259,6 @@ class Chart {
    * @param min Y 라벨에 표시되는 최소 값
    */
   private setMinMaxData() {
-    let newMax: number = 0;
-    let newMin: number = 0;
     if (this.zoom) {
       // 줌인 줌 아웃 기능 활성화 시에 사용됨
       // Set min, max data for datas
@@ -271,16 +272,17 @@ class Chart {
         newMaxList.push(Math.max(...data.slice(startIndex)));
       });
       // Set average of the range of min and max
-      newMax = Math.max(...newMaxList);
-      newMin = Math.min(...newMinList);
+      this.maxDataForDatas = Math.max(...newMaxList);
+      this.minDataForDatas = Math.min(...newMinList);
     } else {
-      newMax = Math.max(...this.datas.map((data) => data.max));
-      newMin = Math.min(...this.datas.map((data) => data.min));
+      this.maxDataForDatas = Math.max(...this.datas.map((data) => data.max));
+      this.minDataForDatas = Math.min(...this.datas.map((data) => data.min));
     }
 
-    const averageOfMinMax = (newMax - newMin) / this.yAxisCount;
-    this.maxData = newMax + averageOfMinMax;
-    this.minData = newMin - averageOfMinMax;
+    const averageOfMinMax =
+      (this.maxDataForDatas - this.minDataForDatas) / this.yAxisCount;
+    this.maxData = this.maxDataForDatas + averageOfMinMax;
+    this.minData = this.minDataForDatas - averageOfMinMax;
   }
 
   /**
@@ -349,6 +351,9 @@ class Chart {
       },
     ]);
 
+    // Create Hover Data Point(Circle) Container For Chart
+    this.hoverPointContainer = this.createSvgElement('g');
+
     // Create Mouse Event Area Container For Chart
     this.mouseEventAreaContainer = this.createSvgElement('rect', [
       { property: 'x', value: `${this.padding.left}` },
@@ -376,6 +381,7 @@ class Chart {
     this.appendToChart(this.guideLineContainer);
     this.appendToChart(this.datasContainer);
     this.appendToChart(this.hoverGuidLineContainer);
+    this.appendToChart(this.hoverPointContainer);
     this.appendToChart(this.axiosContainer);
     this.appendToChart(this.mouseEventAreaContainer);
   };
@@ -572,6 +578,8 @@ class Chart {
 
       // 가장 긴 데이터 리스트와의 길이 차이
       const diff = this.maxChartDataCount - data.length;
+      // custom Color의 y 좌표 값을 구하기 위해 사용되는 변수
+      const yList: number[] = [];
       for (
         let j = data.length - this.showDataCount + diff;
         j < data.length;
@@ -591,16 +599,27 @@ class Chart {
             ((value - this.minData) / (this.maxData - this.minData)) +
           this.padding.top;
 
+        yList.push(y);
         pointList.push(`${x},${y}`);
       }
 
       // set color
-      // let customColor = data.customColor().border;
+      // let customColor = data.customColor().border;``
+      // Todo Change objectBoundingBox To userSpaceOnUse
       let borderCustomColor = '';
       if (customColor) {
         let customColorElement = customColor().border;
         if (customColorElement) {
-          borderCustomColor = this.setCustomColor(customColorElement);
+          borderCustomColor = this.setCustomColor(
+            customColorElement,
+            {
+              x1: `${this.padding.left}`,
+              y1: `${Math.min(...yList)}`,
+              x2: `${this.padding.left}`,
+              y2: `${Math.max(...yList)}`,
+            },
+            'userSpaceOnUse'
+          );
         }
       }
 
@@ -822,6 +841,10 @@ class Chart {
     this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
 
     // 3. Point from data line
+    const gTagOfDataPoint = this.createSvgElement('g');
+    this.datas.forEach((_, i) => {
+      const { data } = _;
+    });
 
     // 4. Pop info dialog for datas
   };
