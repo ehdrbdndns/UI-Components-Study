@@ -7,7 +7,8 @@ interface ChartType {
   };
   datas: ChartDataType[];
   labels: string[];
-  backgroundColor: string;
+  backgroundColor?: string;
+  hoverCardBackgroundColor?: string;
   zoom?: boolean;
   showDataCount?: number;
   showLabelCount?: number;
@@ -60,6 +61,7 @@ class Chart {
   private mouseEventAreaContainer: SVGSVGElement;
   private hoverGuidLineContainer: SVGSVGElement;
   private hoverPointsContainer: SVGSVGElement;
+  private hoverCardContainer: HTMLElement;
 
   private svgNs: string = 'http://www.w3.org/2000/svg';
 
@@ -85,6 +87,7 @@ class Chart {
 
   private defaultColor: string = '#fff'; // data Line의 기본 색상
   private backgrondColor: string = '#48519B'; // Chart 배경 색상
+  private hoverCardBackgroundColor: string = '#48519B'; // Hover시 생성되는 카드의 배경 색상
 
   private zoom = false; // 줌인, 줌아웃 기능 추가 여부
   private showDataCount: number = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
@@ -103,12 +106,16 @@ class Chart {
       zoom = false,
       showDataCount,
       showLabelCount,
+      hoverCardBackgroundColor,
     } = data;
     this.targetId = targetId;
     this.width = size.width;
     this.hegiht = size.height;
     this.fontSize = size.font;
-    this.backgrondColor = backgroundColor;
+    this.backgrondColor = backgroundColor ? backgroundColor : '#48519B';
+    this.hoverCardBackgroundColor = hoverCardBackgroundColor
+      ? hoverCardBackgroundColor
+      : this.backgrondColor;
 
     this.datas = datas;
     this.labels = labels;
@@ -138,6 +145,33 @@ class Chart {
    */
   private getTarget() {
     return document.getElementById(this.targetId);
+  }
+
+  /**
+   * 문자열을 HTML Element로 변환하는 함수
+   * @param {string} str HTML로 변환할 문자열
+   * @returns {HTMLElement}
+   */
+  /**
+   * 문자열을 HTML Element로 변환하는 함수
+   * @param {string} str HTML로 변환할 문자열
+   * @param {classList?: string[], id: string} param1 생성되는 HTML에 적용할 class와 id 값
+   * @returns
+   */
+  private stringToHTML(
+    str: string,
+    option: { classList?: string[]; id?: string }
+  ) {
+    const { classList, id } = option;
+    const dom = document.createElement('div');
+    if (classList) {
+      classList.forEach((item) => {
+        dom.classList.add(item);
+      });
+    }
+    id && dom.setAttribute('id', id);
+    dom.innerHTML = str;
+    return dom;
   }
 
   /**
@@ -360,6 +394,87 @@ class Chart {
       this.appendChilds(this.hoverPointsContainer, [point]);
     });
 
+    // Create Hover Info Container For Chart
+    // Todo Card 생성 로직 수정해야 함..
+    //   const hoverCardString = `
+    //     <style>
+    //       .flowbit_card {
+    //         background: linear-gradient(
+    //           107deg,
+    //           rgba(250, 0, 255, 0.48) -36.41%,
+    //           rgba(72, 81, 155, 0.78) 75.37%
+    //         );
+    //         padding: 10px 15px;
+    //         border-radius: 8px;
+    //         visibility: hidden;
+    //         position: absolute;
+
+    //         font-size: 12px;
+    //         color: white;
+    //       }
+    //       .flowbit_card-contents {
+    //         display: flex;
+    //         flex-direction: column;
+    //         gap: 8px;
+    //       }
+    //       .flowbit_card-content {
+    //         display: flex;
+    //         flex-direction: column;
+    //         gap: 4px;
+    //       }
+    //       .flowbit_card-labels {
+    //         display: flex;
+    //         gap: 12px;
+    //       }
+    //       .flowbit_card-label {
+    //         display: flex;
+    //         flex-direction: column;
+    //         gap: 3px;
+    //       }
+    //       .flowbit_card-label > span {
+    //         font-weight: 300;
+    //       }
+    //       .flowbit_card-label > strong {
+    //         font-weight: 700;
+    //       }
+    //       .flowbit_card-content > span {
+    //         font-weight: 400;
+    //       }
+    //       .flowbit_card-content b {
+    //         font-weight: 600;
+    //       }
+    //       .flowbit_card-content .green {
+    //         color: #00ff29;
+    //       }
+    //       .flowbit_card-content .red {
+    //         color: #f00;
+    //       }
+    //     </style>
+    //     <div class="flowbit_card-contents">
+    //       <div class="flowbit_card-content">
+    //         <div class="flowbit_card-labels">
+    //           <div class="flowbit_card-label">
+    //             <span id="flowbit_card-label1">BTC 예측가격</span>
+    //             <strong id="flowbit_card-price1">47,831,251 KRW</strong>
+    //           </div>
+    //           <div class="flowbit_card-label">
+    //             <span id="flowbit_card-label2">BTC 실제가격</span>
+    //             <strong id="flowbit_card-price2">46,831,251 KRW</strong>
+    //           </div>
+    //         </div>
+    //       </div>
+    //       <div class="flowbit_card-content">
+    //         <span>예측 오차: <b id="flowbit_card-diff" class="green">+6000(6%)</b></span>
+    //         <span>플로우빗 상승 추세 예측에 <b id="flowbit_card-predicted" class="green">성공</b>했어요!</span>
+    //       </div>
+    //     </div>
+    // </div>
+    //   `;
+    //   this.hoverCardContainer = this.stringToHTML(hoverCardString, {
+    //     classList: ['flowbit_card'],
+    //   });
+    this.hoverCardContainer = document.createElement('div');
+
     // Create Mouse Event Area Container For Chart
     this.mouseEventAreaContainer = this.createSvgElement('rect', [
       { property: 'x', value: `${this.padding.left}` },
@@ -390,6 +505,7 @@ class Chart {
     this.appendToChart(this.hoverPointsContainer);
     this.appendToChart(this.axiosContainer);
     this.appendToChart(this.mouseEventAreaContainer);
+    this.getTarget()?.appendChild(this.hoverCardContainer);
   };
 
   /**
@@ -827,6 +943,11 @@ class Chart {
     const mouseX = e.clientX - rect.left;
     const persent = mouseX / rect.width;
     const index = Math.abs(Math.round((this.showDataCount - 1) * persent));
+    const dataValueList: {
+      cur: number;
+      prev: number;
+      legend: string;
+    }[] = [];
 
     // 2. Draw Hover line Like Y Axios Guidline
     const xPositionOfIndex =
@@ -841,10 +962,19 @@ class Chart {
 
     // 3. Point from data line
     this.datas.forEach((_, i) => {
-      const { data, color, borderCustomColorId } = _;
+      const { data, color, borderCustomColorId, label } = _;
       const diff = this.maxChartDataCount - data.length;
-      const dataOfIndex = data[data.length - this.showDataCount + index + diff];
+      const indexOfData = data.length - this.showDataCount + index + diff;
+      const dataOfIndex = data[indexOfData];
       const hoverPoint = document.getElementById(`flowbit_hoverPoint${i}`);
+
+      // Todo 라이브러리 화를 고려하지 않고 특정 기능에만 작동되는 hover Card로 우선 개발됨
+      // 추후 커스텀화를 고려해 코드를 수정해야 함, 우선 여기서는 실제 가격이 먼저 나옴
+      dataValueList.push({
+        cur: dataOfIndex,
+        prev: data[indexOfData - 1],
+        legend: label,
+      });
 
       this.hoverPointsContainer.setAttribute('visibility', 'visible');
 
@@ -878,7 +1008,121 @@ class Chart {
         })()
       );
     });
+
     // 4. Pop info dialog for datas
+    // TODO 라이브러리 화를 고려하지 않고 특정 기능에만 작동되는 hover Card로 우선 개발됨
+    // 추후 커스텀화를 고려해 코드를 수정해야 함, 우선 여기서는 실제 가격이 먼저 나옴
+    if (dataValueList[0].cur === undefined) {
+      this.hoverCardContainer.remove();
+      return;
+    }
+
+    const actualData = dataValueList[0];
+    const predictedData = dataValueList[1];
+    const dataDiff =
+      actualData.cur - predictedData.cur > 0
+        ? `<span>예측 오차: <b class="green">+${(
+            actualData.cur - predictedData.cur
+          ).toLocaleString()} KRW</b></span>`
+        : `<span>예측 오차: <b class="red">${(
+            actualData.cur - predictedData.cur
+          ).toLocaleString()} KRW</b></span>`;
+    const predictedDiff = predictedData.cur - predictedData.prev;
+    const actualDiff = actualData.cur - actualData.prev;
+    const isCorrect =
+      (predictedDiff > 0 && actualDiff > 0) ||
+      (predictedDiff < 0 && actualDiff < 0)
+        ? `<span>플로우빗 상승 추세 예측에 <b class="green">성공</b>했어요!</span>`
+        : `<span>플로우빗 상승 추세 예측에 <b class="red">실패</b>했어요!</span>`;
+    const hoverCardString = `
+        <style>
+          .flowbit_card {
+            background: linear-gradient(
+              107deg,
+              rgba(250, 0, 255, 0.48) -36.41%,
+              rgba(72, 81, 155, 0.78) 75.37%
+            );
+            padding: 10px 15px;
+            border-radius: 8px;
+            visibility: hidden;
+            position: absolute;
+
+            font-size: 12px;
+            color: white;
+          }
+          .flowbit_card-contents {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+          .flowbit_card-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+          .flowbit_card-labels {
+            display: flex;
+            gap: 12px;
+          }
+          .flowbit_card-label {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+          }
+          .flowbit_card-label > span {
+            font-weight: 300;
+          }
+          .flowbit_card-label > strong {
+            font-weight: 700;
+          }
+          .flowbit_card-content > span {
+            font-weight: 400;
+          }
+          .flowbit_card-content b {
+            font-weight: 600;
+          }
+          .flowbit_card-content .green {
+            color: #00ff29;
+          }
+          .flowbit_card-content .red {
+            color: #f00;
+          }
+        </style>
+        <div class="flowbit_card-contents">
+          <div class="flowbit_card-content">
+            <div class="flowbit_card-labels">
+              <div class="flowbit_card-label">
+                <span>BTC 예측가격</span>
+                <strong>${predictedData.cur.toLocaleString()} KRW</strong>
+              </div>
+              <div class="flowbit_card-label">
+                <span>BTC 실제가격</span>
+                <strong>${actualData.cur.toLocaleString()} KRW</strong>
+              </div>
+            </div>
+          </div>
+          <div class="flowbit_card-content">
+          ${dataDiff}
+          ${isCorrect}
+          </div>
+        </div>
+    </div>
+      `;
+    this.hoverCardContainer.remove();
+    this.hoverCardContainer = this.stringToHTML(hoverCardString, {
+      classList: ['flowbit_card'],
+    });
+    this.getTarget()?.append(this.hoverCardContainer);
+
+    this.hoverCardContainer.style.visibility = 'visible';
+    this.hoverCardContainer.style.top = `${e.pageY + 10}px`;
+    if (persent > 0.5) {
+      this.hoverCardContainer.style.left = `${e.pageX - 10}px`;
+      this.hoverCardContainer.style.translate = '-100%';
+    } else {
+      this.hoverCardContainer.style.left = `${e.pageX + 10}px`;
+      this.hoverCardContainer.style.translate = '0';
+    }
   };
 
   /**
@@ -904,6 +1148,7 @@ class Chart {
     this.mouseEventAreaContainer.addEventListener('mouseleave', () => {
       this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
       this.hoverPointsContainer.setAttribute('visibility', 'hidden');
+      this.hoverCardContainer.style.visibility = 'hidden';
     });
   };
 

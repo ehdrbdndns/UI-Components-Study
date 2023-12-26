@@ -22,6 +22,7 @@ var Chart = /** @class */ (function () {
         this.minData = 0; // y축에서 표현되는 가장 작은 수 (minDataForDatas - 평균 값)
         this.defaultColor = '#fff'; // data Line의 기본 색상
         this.backgrondColor = '#48519B'; // Chart 배경 색상
+        this.hoverCardBackgroundColor = '#48519B'; // Hover시 생성되는 카드의 배경 색상
         this.zoom = false; // 줌인, 줌아웃 기능 추가 여부
         this.showDataCount = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
         this.showLabelCount = 0; // 화면에 보여줄 라벨 개수 (zoom 모드에서만 사용하는 변수)
@@ -40,6 +41,7 @@ var Chart = /** @class */ (function () {
          * SVG 기본 값을 설정하는 함수
          */
         this.setSVGElement = function () {
+            var _a;
             // Create Custom Color Def Container For Chart
             _this.customColorContainer = _this.createSvgElement('defs', [
                 { property: 'class', value: 'customColor' },
@@ -84,6 +86,85 @@ var Chart = /** @class */ (function () {
                 ]);
                 _this.appendChilds(_this.hoverPointsContainer, [point]);
             });
+            // Create Hover Info Container For Chart
+            // Todo Card 생성 로직 수정해야 함..
+            //   const hoverCardString = `
+            //     <style>
+            //       .flowbit_card {
+            //         background: linear-gradient(
+            //           107deg,
+            //           rgba(250, 0, 255, 0.48) -36.41%,
+            //           rgba(72, 81, 155, 0.78) 75.37%
+            //         );
+            //         padding: 10px 15px;
+            //         border-radius: 8px;
+            //         visibility: hidden;
+            //         position: absolute;
+            //         font-size: 12px;
+            //         color: white;
+            //       }
+            //       .flowbit_card-contents {
+            //         display: flex;
+            //         flex-direction: column;
+            //         gap: 8px;
+            //       }
+            //       .flowbit_card-content {
+            //         display: flex;
+            //         flex-direction: column;
+            //         gap: 4px;
+            //       }
+            //       .flowbit_card-labels {
+            //         display: flex;
+            //         gap: 12px;
+            //       }
+            //       .flowbit_card-label {
+            //         display: flex;
+            //         flex-direction: column;
+            //         gap: 3px;
+            //       }
+            //       .flowbit_card-label > span {
+            //         font-weight: 300;
+            //       }
+            //       .flowbit_card-label > strong {
+            //         font-weight: 700;
+            //       }
+            //       .flowbit_card-content > span {
+            //         font-weight: 400;
+            //       }
+            //       .flowbit_card-content b {
+            //         font-weight: 600;
+            //       }
+            //       .flowbit_card-content .green {
+            //         color: #00ff29;
+            //       }
+            //       .flowbit_card-content .red {
+            //         color: #f00;
+            //       }
+            //     </style>
+            //     <div class="flowbit_card-contents">
+            //       <div class="flowbit_card-content">
+            //         <div class="flowbit_card-labels">
+            //           <div class="flowbit_card-label">
+            //             <span id="flowbit_card-label1">BTC 예측가격</span>
+            //             <strong id="flowbit_card-price1">47,831,251 KRW</strong>
+            //           </div>
+            //           <div class="flowbit_card-label">
+            //             <span id="flowbit_card-label2">BTC 실제가격</span>
+            //             <strong id="flowbit_card-price2">46,831,251 KRW</strong>
+            //           </div>
+            //         </div>
+            //       </div>
+            //       <div class="flowbit_card-content">
+            //         <span>예측 오차: <b id="flowbit_card-diff" class="green">+6000(6%)</b></span>
+            //         <span>플로우빗 상승 추세 예측에 <b id="flowbit_card-predicted" class="green">성공</b>했어요!</span>
+            //       </div>
+            //     </div>
+            // </div>
+            //   `;
+            //   this.hoverCardContainer = this.stringToHTML(hoverCardString, {
+            //     classList: ['flowbit_card'],
+            //   });
+            _this.hoverCardContainer = document.createElement('div');
             // Create Mouse Event Area Container For Chart
             _this.mouseEventAreaContainer = _this.createSvgElement('rect', [
                 { property: 'x', value: "".concat(_this.padding.left) },
@@ -113,6 +194,7 @@ var Chart = /** @class */ (function () {
             _this.appendToChart(_this.hoverPointsContainer);
             _this.appendToChart(_this.axiosContainer);
             _this.appendToChart(_this.mouseEventAreaContainer);
+            (_a = _this.getTarget()) === null || _a === void 0 ? void 0 : _a.appendChild(_this.hoverCardContainer);
         };
         /**
          * X축 Y축 선을 긋는 함수
@@ -487,10 +569,12 @@ var Chart = /** @class */ (function () {
          * 마우스를 올린 지점에 데이터의 Info 창을 보여줌
          */
         this.setMouseHoverAction = function (e) {
+            var _a;
             var rect = e.target.getBoundingClientRect();
             var mouseX = e.clientX - rect.left;
             var persent = mouseX / rect.width;
             var index = Math.abs(Math.round((_this.showDataCount - 1) * persent));
+            var dataValueList = [];
             // 2. Draw Hover line Like Y Axios Guidline
             var xPositionOfIndex = (index / (_this.showDataCount - 1)) *
                 (_this.width - _this.padding.left - _this.padding.right) +
@@ -500,10 +584,18 @@ var Chart = /** @class */ (function () {
             _this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
             // 3. Point from data line
             _this.datas.forEach(function (_, i) {
-                var data = _.data, color = _.color, borderCustomColorId = _.borderCustomColorId;
+                var data = _.data, color = _.color, borderCustomColorId = _.borderCustomColorId, label = _.label;
                 var diff = _this.maxChartDataCount - data.length;
-                var dataOfIndex = data[data.length - _this.showDataCount + index + diff];
+                var indexOfData = data.length - _this.showDataCount + index + diff;
+                var dataOfIndex = data[indexOfData];
                 var hoverPoint = document.getElementById("flowbit_hoverPoint".concat(i));
+                // Todo 라이브러리 화를 고려하지 않고 특정 기능에만 작동되는 hover Card로 우선 개발됨
+                // 추후 커스텀화를 고려해 코드를 수정해야 함, 우선 여기서는 실제 가격이 먼저 나옴
+                dataValueList.push({
+                    cur: dataOfIndex,
+                    prev: data[indexOfData - 1],
+                    legend: label,
+                });
                 _this.hoverPointsContainer.setAttribute('visibility', 'visible');
                 // data가 전체 길이상에 존재하지 않을 경우에는 point를 생성하지 않음
                 if (dataOfIndex === undefined) {
@@ -530,6 +622,39 @@ var Chart = /** @class */ (function () {
                 })());
             });
             // 4. Pop info dialog for datas
+            // TODO 라이브러리 화를 고려하지 않고 특정 기능에만 작동되는 hover Card로 우선 개발됨
+            // 추후 커스텀화를 고려해 코드를 수정해야 함, 우선 여기서는 실제 가격이 먼저 나옴
+            if (dataValueList[0].cur === undefined) {
+                _this.hoverCardContainer.remove();
+                return;
+            }
+            var actualData = dataValueList[0];
+            var predictedData = dataValueList[1];
+            var dataDiff = actualData.cur - predictedData.cur > 0
+                ? "<span>\uC608\uCE21 \uC624\uCC28: <b class=\"green\">+".concat((actualData.cur - predictedData.cur).toLocaleString(), " KRW</b></span>")
+                : "<span>\uC608\uCE21 \uC624\uCC28: <b class=\"red\">".concat((actualData.cur - predictedData.cur).toLocaleString(), " KRW</b></span>");
+            var predictedDiff = predictedData.cur - predictedData.prev;
+            var actualDiff = actualData.cur - actualData.prev;
+            var isCorrect = (predictedDiff > 0 && actualDiff > 0) ||
+                (predictedDiff < 0 && actualDiff < 0)
+                ? "<span>\uD50C\uB85C\uC6B0\uBE57 \uC0C1\uC2B9 \uCD94\uC138 \uC608\uCE21\uC5D0 <b class=\"green\">\uC131\uACF5</b>\uD588\uC5B4\uC694!</span>"
+                : "<span>\uD50C\uB85C\uC6B0\uBE57 \uC0C1\uC2B9 \uCD94\uC138 \uC608\uCE21\uC5D0 <b class=\"red\">\uC2E4\uD328</b>\uD588\uC5B4\uC694!</span>";
+            var hoverCardString = "\n        <style>\n          .flowbit_card {\n            background: linear-gradient(\n              107deg,\n              rgba(250, 0, 255, 0.48) -36.41%,\n              rgba(72, 81, 155, 0.78) 75.37%\n            );\n            padding: 10px 15px;\n            border-radius: 8px;\n            visibility: hidden;\n            position: absolute;\n\n            font-size: 12px;\n            color: white;\n          }\n          .flowbit_card-contents {\n            display: flex;\n            flex-direction: column;\n            gap: 8px;\n          }\n          .flowbit_card-content {\n            display: flex;\n            flex-direction: column;\n            gap: 4px;\n          }\n          .flowbit_card-labels {\n            display: flex;\n            gap: 12px;\n          }\n          .flowbit_card-label {\n            display: flex;\n            flex-direction: column;\n            gap: 3px;\n          }\n          .flowbit_card-label > span {\n            font-weight: 300;\n          }\n          .flowbit_card-label > strong {\n            font-weight: 700;\n          }\n          .flowbit_card-content > span {\n            font-weight: 400;\n          }\n          .flowbit_card-content b {\n            font-weight: 600;\n          }\n          .flowbit_card-content .green {\n            color: #00ff29;\n          }\n          .flowbit_card-content .red {\n            color: #f00;\n          }\n        </style>\n        <div class=\"flowbit_card-contents\">\n          <div class=\"flowbit_card-content\">\n            <div class=\"flowbit_card-labels\">\n              <div class=\"flowbit_card-label\">\n                <span>BTC \uC608\uCE21\uAC00\uACA9</span>\n                <strong>".concat(predictedData.cur.toLocaleString(), " KRW</strong>\n              </div>\n              <div class=\"flowbit_card-label\">\n                <span>BTC \uC2E4\uC81C\uAC00\uACA9</span>\n                <strong>").concat(actualData.cur.toLocaleString(), " KRW</strong>\n              </div>\n            </div>\n          </div>\n          <div class=\"flowbit_card-content\">\n          ").concat(dataDiff, "\n          ").concat(isCorrect, "\n          </div>\n        </div>\n    </div>\n      ");
+            _this.hoverCardContainer.remove();
+            _this.hoverCardContainer = _this.stringToHTML(hoverCardString, {
+                classList: ['flowbit_card'],
+            });
+            (_a = _this.getTarget()) === null || _a === void 0 ? void 0 : _a.append(_this.hoverCardContainer);
+            _this.hoverCardContainer.style.visibility = 'visible';
+            _this.hoverCardContainer.style.top = "".concat(e.pageY + 10, "px");
+            if (persent > 0.5) {
+                _this.hoverCardContainer.style.left = "".concat(e.pageX - 10, "px");
+                _this.hoverCardContainer.style.translate = '-100%';
+            }
+            else {
+                _this.hoverCardContainer.style.left = "".concat(e.pageX + 10, "px");
+                _this.hoverCardContainer.style.translate = '0';
+            }
         };
         /**
          * Chart의 Interaction 기능을 설정하는 함수
@@ -546,6 +671,7 @@ var Chart = /** @class */ (function () {
             _this.mouseEventAreaContainer.addEventListener('mouseleave', function () {
                 _this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
                 _this.hoverPointsContainer.setAttribute('visibility', 'hidden');
+                _this.hoverCardContainer.style.visibility = 'hidden';
             });
         };
         /**
@@ -569,12 +695,15 @@ var Chart = /** @class */ (function () {
             // Set Interaction
             _this.setInteraction();
         };
-        var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels, backgroundColor = data.backgroundColor, _b = data.zoom, zoom = _b === void 0 ? false : _b, showDataCount = data.showDataCount, showLabelCount = data.showLabelCount;
+        var datas = data.datas, size = data.size, targetId = data.targetId, labels = data.labels, backgroundColor = data.backgroundColor, _b = data.zoom, zoom = _b === void 0 ? false : _b, showDataCount = data.showDataCount, showLabelCount = data.showLabelCount, hoverCardBackgroundColor = data.hoverCardBackgroundColor;
         this.targetId = targetId;
         this.width = size.width;
         this.hegiht = size.height;
         this.fontSize = size.font;
-        this.backgrondColor = backgroundColor;
+        this.backgrondColor = backgroundColor ? backgroundColor : '#48519B';
+        this.hoverCardBackgroundColor = hoverCardBackgroundColor
+            ? hoverCardBackgroundColor
+            : this.backgrondColor;
         this.datas = datas;
         this.labels = labels;
         this.xAxisCount = labels.length;
@@ -599,6 +728,29 @@ var Chart = /** @class */ (function () {
      */
     Chart.prototype.getTarget = function () {
         return document.getElementById(this.targetId);
+    };
+    /**
+     * 문자열을 HTML Element로 변환하는 함수
+     * @param {string} str HTML로 변환할 문자열
+     * @returns {HTMLElement}
+     */
+    /**
+     * 문자열을 HTML Element로 변환하는 함수
+     * @param {string} str HTML로 변환할 문자열
+     * @param {classList?: string[], id: string} param1 생성되는 HTML에 적용할 class와 id 값
+     * @returns
+     */
+    Chart.prototype.stringToHTML = function (str, option) {
+        var classList = option.classList, id = option.id;
+        var dom = document.createElement('div');
+        if (classList) {
+            classList.forEach(function (item) {
+                dom.classList.add(item);
+            });
+        }
+        id && dom.setAttribute('id', id);
+        dom.innerHTML = str;
+        return dom;
     };
     /**
      * SVG 태그에 생성되는 문자의 길이를 구하는 함수
