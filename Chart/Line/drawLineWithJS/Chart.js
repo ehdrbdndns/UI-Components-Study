@@ -552,9 +552,9 @@ var Chart = /** @class */ (function () {
             }
             var actualData = dataValueList[0];
             var predictedData = dataValueList[1];
-            var dataDiff = actualData.cur - predictedData.cur > 0
-                ? "<span>\uC608\uCE21 \uC624\uCC28: <b class=\"green\">+".concat((actualData.cur - predictedData.cur).toLocaleString(), " KRW</b></span>")
-                : "<span>\uC608\uCE21 \uC624\uCC28: <b class=\"red\">".concat((actualData.cur - predictedData.cur).toLocaleString(), " KRW</b></span>");
+            var dataDiff = predictedData.cur - actualData.cur > 0
+                ? "<span>\uC608\uCE21 \uC624\uCC28: <b class=\"green\">+".concat((predictedData.cur - actualData.cur).toLocaleString(), " KRW</b></span>")
+                : "<span>\uC608\uCE21 \uC624\uCC28: <b class=\"red\">".concat((predictedData.cur - actualData.cur).toLocaleString(), " KRW</b></span>");
             var isCorrect = (actualData.prev - actualData.cur) *
                 (actualData.prev - predictedData.cur) >
                 0

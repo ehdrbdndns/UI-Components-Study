@@ -952,12 +952,12 @@ class Chart {
     const actualData = dataValueList[0];
     const predictedData = dataValueList[1];
     const dataDiff =
-      actualData.cur - predictedData.cur > 0
+      predictedData.cur - actualData.cur > 0
         ? `<span>예측 오차: <b class="green">+${(
-            actualData.cur - predictedData.cur
+            predictedData.cur - actualData.cur
           ).toLocaleString()} KRW</b></span>`
         : `<span>예측 오차: <b class="red">${(
-            actualData.cur - predictedData.cur
+            predictedData.cur - actualData.cur
           ).toLocaleString()} KRW</b></span>`;
 
     const isCorrect =
