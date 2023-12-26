@@ -137,6 +137,17 @@ class Chart {
     this.chart.style.backgroundColor = this.backgrondColor;
     this.chart.style.display = 'block';
     this.getTarget()?.appendChild(this.chart);
+
+    this.labelContainer = this.createSvgElement('g');
+    this.customColorContainer = this.createSvgElement('g');
+    this.datasContainer = this.createSvgElement('g');
+    this.legendContainer = this.createSvgElement('g');
+    this.guideLineContainer = this.createSvgElement('g');
+    this.axiosContainer = this.createSvgElement('g');
+    this.mouseEventAreaContainer = this.createSvgElement('g');
+    this.hoverGuidLineContainer = this.createSvgElement('g');
+    this.hoverPointsContainer = this.createSvgElement('g');
+    this.hoverCardContainer = document.createElement('div');
   }
 
   /**
@@ -394,85 +405,6 @@ class Chart {
       this.appendChilds(this.hoverPointsContainer, [point]);
     });
 
-    // Create Hover Info Container For Chart
-    // Todo Card 생성 로직 수정해야 함..
-    //   const hoverCardString = `
-    //     <style>
-    //       .flowbit_card {
-    //         background: linear-gradient(
-    //           107deg,
-    //           rgba(250, 0, 255, 0.48) -36.41%,
-    //           rgba(72, 81, 155, 0.78) 75.37%
-    //         );
-    //         padding: 10px 15px;
-    //         border-radius: 8px;
-    //         visibility: hidden;
-    //         position: absolute;
-
-    //         font-size: 12px;
-    //         color: white;
-    //       }
-    //       .flowbit_card-contents {
-    //         display: flex;
-    //         flex-direction: column;
-    //         gap: 8px;
-    //       }
-    //       .flowbit_card-content {
-    //         display: flex;
-    //         flex-direction: column;
-    //         gap: 4px;
-    //       }
-    //       .flowbit_card-labels {
-    //         display: flex;
-    //         gap: 12px;
-    //       }
-    //       .flowbit_card-label {
-    //         display: flex;
-    //         flex-direction: column;
-    //         gap: 3px;
-    //       }
-    //       .flowbit_card-label > span {
-    //         font-weight: 300;
-    //       }
-    //       .flowbit_card-label > strong {
-    //         font-weight: 700;
-    //       }
-    //       .flowbit_card-content > span {
-    //         font-weight: 400;
-    //       }
-    //       .flowbit_card-content b {
-    //         font-weight: 600;
-    //       }
-    //       .flowbit_card-content .green {
-    //         color: #00ff29;
-    //       }
-    //       .flowbit_card-content .red {
-    //         color: #f00;
-    //       }
-    //     </style>
-    //     <div class="flowbit_card-contents">
-    //       <div class="flowbit_card-content">
-    //         <div class="flowbit_card-labels">
-    //           <div class="flowbit_card-label">
-    //             <span id="flowbit_card-label1">BTC 예측가격</span>
-    //             <strong id="flowbit_card-price1">47,831,251 KRW</strong>
-    //           </div>
-    //           <div class="flowbit_card-label">
-    //             <span id="flowbit_card-label2">BTC 실제가격</span>
-    //             <strong id="flowbit_card-price2">46,831,251 KRW</strong>
-    //           </div>
-    //         </div>
-    //       </div>
-    //       <div class="flowbit_card-content">
-    //         <span>예측 오차: <b id="flowbit_card-diff" class="green">+6000(6%)</b></span>
-    //         <span>플로우빗 상승 추세 예측에 <b id="flowbit_card-predicted" class="green">성공</b>했어요!</span>
-    //       </div>
-    //     </div>
-    // </div>
-    //   `;
-    //   this.hoverCardContainer = this.stringToHTML(hoverCardString, {
-    //     classList: ['flowbit_card'],
-    //   });
     this.hoverCardContainer = document.createElement('div');
 
     // Create Mouse Event Area Container For Chart
@@ -1134,10 +1066,12 @@ class Chart {
     // Set Scroll Event
     // Zoom in, out 기능
     if (this.zoom) {
-      this.mouseEventAreaContainer.addEventListener(
-        'mousewheel',
-        this.setZoomAction
-      );
+      this.mouseEventAreaContainer.addEventListener('mousewheel', (e) => {
+        this.setZoomAction(e);
+        this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
+        this.hoverPointsContainer.setAttribute('visibility', 'hidden');
+        this.hoverCardContainer.style.visibility = 'hidden';
+      });
     }
 
     // Set Mouse Hover Event
