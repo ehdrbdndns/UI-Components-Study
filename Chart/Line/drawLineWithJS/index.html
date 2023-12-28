@@ -15,9 +15,59 @@
       }
       .container {
         width: 800px;
+        overflow: hidden;
         border-radius: 15px;
         border: 1px solid #48519b;
-        background-color: rgba(37, 57, 88, 0.35);
+        /* background-color: rgba(37, 57, 88, 0.35); */
+      }
+      .flowbit_card {
+        background: linear-gradient(
+          107deg,
+          rgba(250, 0, 255, 0.48) -36.41%,
+          rgba(72, 81, 155, 0.78) 75.37%
+        );
+        padding: 10px 15px;
+        border-radius: 8px;
+
+        font-size: 12px;
+        color: white;
+      }
+      .flowbit_card-contents {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .flowbit_card-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .flowbit_card-labels {
+        display: flex;
+        gap: 12px;
+      }
+      .flowbit_card-label {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .flowbit_card-label > span {
+        font-weight: 300;
+      }
+      .flowbit_card-label > strong {
+        font-weight: 700;
+      }
+      .flowbit_card-content > span {
+        font-weight: 400;
+      }
+      .flowbit_card-content b {
+        font-weight: 600;
+      }
+      .flowbit_card-content .green {
+        color: #00ff29;
+      }
+      .flowbit_card-content .red {
+        color: #f00;
       }
     </style>
   </head>
@@ -26,9 +76,6 @@
   </body>
   <script src="./Chart.js"></script>
   <script>
-    let testMax = 50000;
-    let testMin = 30000;
-
     let arr = [
       49240292.0, 49959348.0, 49415788.0, 49089796.0, 49993528.0, 50756712.0,
       50458944.0, 49985408.0, 49682928.0, 50174952.0, 50837048.0, 50443024.0,
@@ -46,6 +93,10 @@
       56673000, 57647000, 59379000, 59060000, 59151000, 59527000, 59259000,
       59248000, 59264000,
     ];
+
+    let testMax = Math.max(...arr);
+    let testMin = Math.min(...arr);
+
     let labels = [
       '11-20',
       '11-21',
@@ -89,7 +140,7 @@
 
     const testDataList = [
       {
-        label: '실제 BTC',
+        label: 'BTC 실제가격',
         color: '#fff',
         width: 3,
         data: arr2,
@@ -97,7 +148,7 @@
         max: testMax,
       },
       {
-        label: '예측 BTC',
+        label: 'BTC 예측가격',
         customColor: (create) => {
           let ns = 'http://www.w3.org/2000/svg';
           // line
@@ -105,7 +156,6 @@
             ns,
             'linearGradient'
           );
-          linearGradientTag.setAttribute('gradientTransform', 'rotate(90)');
 
           const linearStop1 = document.createElementNS(ns, 'stop');
           linearStop1.setAttribute('stop-color', '#FA00FF');
@@ -155,7 +205,7 @@
             legend: LegendGradientTag,
           };
         },
-        width: 7,
+        width: 4,
         data: arr,
         min: testMin,
         max: testMax,
@@ -171,6 +221,9 @@
       },
       datas: testDataList,
       labels: labels,
+      backgroundColor: 'rgba(37, 57, 88, 0.35)',
+      hoverCardBackgroundColor:
+        'linear-gradient(107deg, rgba(250, 0, 255, 0.48) -36.41%, rgba(72, 81, 155, 0.78) 75.37%)',
       zoom: true,
       showDataCount: 15,
       showLabelCount: 15,

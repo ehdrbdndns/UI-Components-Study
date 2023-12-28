@@ -7,6 +7,8 @@ interface ChartType {
   };
   datas: ChartDataType[];
   labels: string[];
+  backgroundColor?: string;
+  hoverCardBackgroundColor?: string;
   zoom?: boolean;
   showDataCount?: number;
   showLabelCount?: number;
@@ -27,6 +29,8 @@ interface ChartDataType {
     legend?: HTMLElement | Element;
     lastPoint?: HTMLElement | Element;
   };
+  // border 사용자 지정 색깔 ID(Defs의 ID 값)
+  borderCustomColorId?: string;
   // 기본 color
   color?: string;
   // 차트 라인의 두께
@@ -48,6 +52,17 @@ interface AttributeType {
 class Chart {
   // SVG Container
   private chart: SVGSVGElement;
+  private labelContainer: SVGSVGElement;
+  private customColorContainer: SVGSVGElement;
+  private datasContainer: SVGSVGElement;
+  private legendContainer: SVGSVGElement;
+  private guideLineContainer: SVGSVGElement;
+  private axiosContainer: SVGSVGElement;
+  private mouseEventAreaContainer: SVGSVGElement;
+  private hoverGuidLineContainer: SVGSVGElement;
+  private hoverPointsContainer: SVGSVGElement;
+  private hoverCardContainer: HTMLElement;
+
   private svgNs: string = 'http://www.w3.org/2000/svg';
 
   private targetId: string;
@@ -65,15 +80,21 @@ class Chart {
 
   private maxChartDataCount: number; // 차트 데이터 개수 중 가장 큰 수
 
-  private maxData: number = 0; // y축에서 표현되는 가장 큰 수
-  private minData: number = 0; // y축에서 표현되는 가장 작은 수
+  private maxDataForDatas: number = 0; // 데이터 중 가장 큰 값
+  private minDataForDatas: number = 0; // 데이터 중 가장 작은 값
+  private maxData: number = 0; // y축에서 표현되는 가장 큰 수 (maxDataForDatas - 평균 값)
+  private minData: number = 0; // y축에서 표현되는 가장 작은 수 (minDataForDatas - 평균 값)
 
-  private defaultColor = '#fff';
-  private customColorDefs: SVGSVGElement;
+  private defaultColor: string = '#fff'; // data Line의 기본 색상
+  private backgrondColor: string = '#48519B'; // Chart 배경 색상
+  private hoverCardBackgroundColor: string = '#48519B'; // Hover시 생성되는 카드의 배경 색상
 
   private zoom = false; // 줌인, 줌아웃 기능 추가 여부
   private showDataCount: number = 0; // 화면에 보여줄 데이터 개수 (zoom 모드에서만 사용하는 변수)
   private showLabelCount: number = 0; // 화면에 보여줄 라벨 개수 (zoom 모드에서만 사용하는 변수)
+
+  private guidLineColor: string = '#797979';
+  private guidLineWidth: string = '.5px';
 
   constructor(data: ChartType) {
     const {
@@ -81,42 +102,52 @@ class Chart {
       size,
       targetId,
       labels,
+      backgroundColor,
       zoom = false,
       showDataCount,
       showLabelCount,
+      hoverCardBackgroundColor,
     } = data;
-    this.chart = this.createSvgElement('svg', [
-      { property: 'id', value: 'flowbit_svg' },
-    ]);
-
     this.targetId = targetId;
     this.width = size.width;
     this.hegiht = size.height;
     this.fontSize = size.font;
+    this.backgrondColor = backgroundColor ? backgroundColor : '#48519B';
+    this.hoverCardBackgroundColor = hoverCardBackgroundColor
+      ? hoverCardBackgroundColor
+      : this.backgrondColor;
 
     this.datas = datas;
     this.labels = labels;
     this.xAxisCount = labels.length;
     this.maxChartDataCount = Math.max(...datas.map((data) => data.data.length));
-    this.customColorDefs = this.createSvgElement('defs', [
-      { property: 'class', value: 'customColor' },
-    ]);
 
-    // 줌인 줌아웃 기능 활성화
-    if (zoom) {
-      this.showDataCount = showDataCount ? showDataCount : this.xAxisCount;
-      this.showLabelCount = showLabelCount
-        ? showLabelCount
-        : this.labels.length;
-
-      this.zoom = zoom;
-    }
+    this.zoom = zoom;
+    this.showDataCount = showDataCount ? showDataCount : this.maxChartDataCount;
+    this.showLabelCount = showLabelCount ? showLabelCount : this.labels.length;
 
     // 줌인 줌 아웃 기능이 활성화 여부가 결정된 이후에 실행시켜야 함
     this.setMinMaxData();
 
-    this.appendToChart(this.customColorDefs);
+    this.chart = this.createSvgElement('svg', [
+      { property: 'id', value: 'flowbit_svg' },
+      { property: 'xmlns', value: 'http://www.w3.org/2000/svg' },
+      { property: 'viewBox', value: `0 0 ${this.width} ${this.hegiht}` },
+    ]);
+    this.chart.style.backgroundColor = this.backgrondColor;
+    this.chart.style.display = 'block';
     this.getTarget()?.appendChild(this.chart);
+
+    this.labelContainer = this.createSvgElement('g');
+    this.customColorContainer = this.createSvgElement('g');
+    this.datasContainer = this.createSvgElement('g');
+    this.legendContainer = this.createSvgElement('g');
+    this.guideLineContainer = this.createSvgElement('g');
+    this.axiosContainer = this.createSvgElement('g');
+    this.mouseEventAreaContainer = this.createSvgElement('g');
+    this.hoverGuidLineContainer = this.createSvgElement('g');
+    this.hoverPointsContainer = this.createSvgElement('g');
+    this.hoverCardContainer = document.createElement('div');
   }
 
   /**
@@ -125,6 +156,33 @@ class Chart {
    */
   private getTarget() {
     return document.getElementById(this.targetId);
+  }
+
+  /**
+   * 문자열을 HTML Element로 변환하는 함수
+   * @param {string} str HTML로 변환할 문자열
+   * @returns {HTMLElement}
+   */
+  /**
+   * 문자열을 HTML Element로 변환하는 함수
+   * @param {string} str HTML로 변환할 문자열
+   * @param {classList?: string[], id: string} param1 생성되는 HTML에 적용할 class와 id 값
+   * @returns
+   */
+  private stringToHTML(
+    str: string,
+    option: { classList?: string[]; id?: string }
+  ) {
+    const { classList, id } = option;
+    const dom = document.createElement('div');
+    if (classList) {
+      classList.forEach((item) => {
+        dom.classList.add(item);
+      });
+    }
+    id && dom.setAttribute('id', id);
+    dom.innerHTML = str;
+    return dom;
   }
 
   /**
@@ -179,7 +237,7 @@ class Chart {
     },
     gradientUnits: 'userSpaceOnUse' | 'objectBoundingBox' = 'objectBoundingBox'
   ) {
-    const randomId = 'flowbitChart' + Math.random().toString(16);
+    const randomId = 'flowbit_' + Math.random().toString(16);
     if (gradientUnits === 'userSpaceOnUse') {
       this.setAttributes(colorSvgElement, [
         { property: 'gradientUnits', value: gradientUnits },
@@ -196,7 +254,7 @@ class Chart {
       ]);
     }
 
-    this.customColorDefs.append(colorSvgElement);
+    this.customColorContainer.append(colorSvgElement);
 
     return randomId;
   }
@@ -261,15 +319,17 @@ class Chart {
         newMaxList.push(Math.max(...data.slice(startIndex)));
       });
       // Set average of the range of min and max
-      let newMax = Math.max(...newMaxList);
-      let newMin = Math.min(...newMinList);
-      const averageOfMinMax = (newMax - newMin) / this.yAxisCount;
-      this.maxData = newMax + averageOfMinMax;
-      this.minData = newMin - averageOfMinMax;
+      this.maxDataForDatas = Math.max(...newMaxList);
+      this.minDataForDatas = Math.min(...newMinList);
     } else {
-      this.maxData = Math.max(...this.datas.map((data) => data.max));
-      this.minData = Math.min(...this.datas.map((data) => data.min));
+      this.maxDataForDatas = Math.max(...this.datas.map((data) => data.max));
+      this.minDataForDatas = Math.min(...this.datas.map((data) => data.min));
     }
+
+    const averageOfMinMax =
+      (this.maxDataForDatas - this.minDataForDatas) / this.yAxisCount;
+    this.maxData = this.maxDataForDatas + averageOfMinMax;
+    this.minData = this.minDataForDatas - averageOfMinMax;
   }
 
   /**
@@ -292,10 +352,92 @@ class Chart {
    * SVG 기본 값을 설정하는 함수
    */
   private setSVGElement = () => {
-    // Create SVG Container
-    this.chart.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    // Set ViewBox
-    this.chart.setAttribute('viewBox', `0 0 ${this.width} ${this.hegiht}`);
+    // Create Custom Color Def Container For Chart
+    this.customColorContainer = this.createSvgElement('defs', [
+      { property: 'class', value: 'customColor' },
+    ]);
+
+    // Create Legend Container For Chart
+    this.legendContainer = this.createSvgElement('g');
+
+    // Create Axios Container For Chart
+    this.axiosContainer = this.createSvgElement('g');
+
+    // Create Label Container For Chart
+    this.labelContainer = this.createSvgElement('g', [
+      { property: 'fill', value: '#fff' },
+      { property: 'font-size', value: this.fontSize + 'px' },
+      { property: 'class', value: 'labels' },
+      { property: 'text-anchor', value: 'end' },
+    ]);
+
+    // Create Data Container For Chart
+    this.datasContainer = this.createSvgElement('g');
+
+    // Create Guide Line Container For Chart
+    this.guideLineContainer = this.createSvgElement('g');
+
+    // Creat Hover guideLine Container For Chart
+    this.hoverGuidLineContainer = this.createSvgElement('path', [
+      { property: 'd', value: '' },
+      { property: 'stroke', value: this.guidLineColor },
+      { property: 'stroke-width', value: this.guidLineWidth },
+      { property: 'visibility', value: 'hidden' },
+      { property: 'id', value: 'flowbit_hoverLine' },
+    ]);
+
+    // Create Hover Data Point(Circle) Container For Chart
+    this.hoverPointsContainer = this.createSvgElement('g', [
+      { property: 'id', value: 'flowbit_hoverPoint' },
+      { property: 'visibility', value: 'hidden' },
+    ]);
+    this.datas.forEach((_, i) => {
+      const point = this.createSvgElement('circle', [
+        { property: 'id', value: `flowbit_hoverPoint${i}` },
+        { property: 'cx', value: '1' },
+        { property: 'cy', value: '1' },
+        { property: 'r', value: '5' },
+        { property: 'fill', value: `${this.backgrondColor}` },
+        { property: 'stroke-width', value: '2' },
+        { property: 'stroke', value: '#fff' },
+      ]);
+
+      this.appendChilds(this.hoverPointsContainer, [point]);
+    });
+
+    this.hoverCardContainer = document.createElement('div');
+
+    // Create Mouse Event Area Container For Chart
+    this.mouseEventAreaContainer = this.createSvgElement('rect', [
+      { property: 'x', value: `${this.padding.left}` },
+      { property: 'y', value: `${this.padding.top}` },
+      {
+        property: 'width',
+        value: `${this.width - this.padding.right - this.padding.left}`,
+      },
+      {
+        property: 'height',
+        value: `${this.hegiht - this.padding.bottom - this.padding.top}`,
+      },
+      {
+        property: 'id',
+        value: 'flowbit_eventArea',
+      },
+    ]);
+    this.mouseEventAreaContainer.style.cursor =
+      'url("https://www.bithumb.com/react/charting_library/sta…es/crosshair.6c091f7d5427d0c5e6d9dc3a90eb2b20.cur"),crosshair';
+    this.mouseEventAreaContainer.style.opacity = '0';
+
+    this.appendToChart(this.customColorContainer);
+    this.appendToChart(this.labelContainer);
+    this.appendToChart(this.legendContainer);
+    this.appendToChart(this.guideLineContainer);
+    this.appendToChart(this.datasContainer);
+    this.appendToChart(this.hoverGuidLineContainer);
+    this.appendToChart(this.hoverPointsContainer);
+    this.appendToChart(this.axiosContainer);
+    this.appendToChart(this.mouseEventAreaContainer);
+    this.getTarget()?.appendChild(this.hoverCardContainer);
   };
 
   /**
@@ -330,20 +472,17 @@ class Chart {
 
     // insert To C
     this.appendChilds(Axis, [xAxis, yAxis]);
-    this.appendToChart(Axis);
+    this.appendChilds(this.axiosContainer, [Axis]);
   };
 
   /**
    * X, Y축의 라벨을 설정하는 함수
    */
   private setLabel = () => {
-    const gTagOfText = this.createSvgElement('g', [
-      { property: 'fill', value: '#fff' },
-      { property: 'font-size', value: this.fontSize + 'px' },
-      { property: 'class', value: 'labels' },
-      { property: 'text-anchor', value: 'end' },
+    const gTagForLabel = this.createSvgElement('g', [
       { property: 'id', value: 'flowbit_label' },
     ]);
+
     const gTagOfXLabel = this.createSvgElement('g', [
       { property: 'text-anchor', value: 'middle' },
     ]);
@@ -421,8 +560,8 @@ class Chart {
       gTagOfYLabel.appendChild(text);
     }
 
-    this.appendChilds(gTagOfText, [gTagOfXLabel, gTagOfYLabel]);
-    this.appendToChart(gTagOfText);
+    this.appendChilds(gTagForLabel, [gTagOfXLabel, gTagOfYLabel]);
+    this.appendChilds(this.labelContainer, [gTagForLabel]);
   };
 
   /**
@@ -473,7 +612,7 @@ class Chart {
     //   gTagOfLine.appendChild(line);
     // }
 
-    this.appendToChart(gTagOfLine);
+    this.appendChilds(this.guideLineContainer, [gTagOfLine]);
   };
 
   /**
@@ -486,62 +625,54 @@ class Chart {
     ]);
     gTagOfPolyLine.classList.add('datas');
 
+    // SET Poly Line
     for (let i = 0; i < this.datas.length; i++) {
-      // SET Poly Line
-      const { data, customColor, width } = this.datas[i];
-
+      let { data, customColor, width, color } = this.datas[i];
       let pointList: string[] = [];
-      if (this.zoom) {
-        // 줌인 줌아웃 기능 활성화한 버전
-        // 가장 긴 데이터 리스트와의 길이 차이
-        const diff = this.maxChartDataCount - data.length;
-        for (
-          let j = data.length - this.showDataCount + diff;
-          j < data.length;
-          j++
-        ) {
-          const value = data[j];
-          let x =
-            ((j - (data.length - this.showDataCount + diff)) /
-              (this.showDataCount - 1)) *
-              (this.width - this.padding.left - this.padding.right) +
-            this.padding.left;
-          let y =
-            this.hegiht -
-            this.padding.top -
-            this.padding.bottom -
-            (this.hegiht - this.padding.bottom - this.padding.top) *
-              ((value - this.minData) / (this.maxData - this.minData)) +
-            this.padding.top;
 
-          pointList.push(`${x},${y}`);
-        }
-      } else {
-        // 줌인 줌아웃 기능 비활성화 버전
-        pointList = data.map((value, j) => {
-          let x =
-            (j / this.datas[0].data.length) *
-              (this.width - this.padding.left - this.padding.right) +
-            this.padding.left;
-          let y =
-            this.hegiht -
-            this.padding.top -
-            this.padding.bottom -
-            (this.hegiht - this.padding.bottom - this.padding.top) *
-              ((value - this.minData) / (this.maxData - this.minData)) +
-            this.padding.top;
+      // 가장 긴 데이터 리스트와의 길이 차이
+      const diff = this.maxChartDataCount - data.length;
+      // custom Color의 y 좌표 값을 구하기 위해 사용되는 변수
+      const yList: number[] = [];
+      for (
+        let j = data.length - this.showDataCount + diff;
+        j < data.length;
+        j++
+      ) {
+        const value = data[j];
+        let x =
+          ((j - (data.length - this.showDataCount + diff)) /
+            (this.showDataCount - 1)) *
+            (this.width - this.padding.left - this.padding.right) +
+          this.padding.left;
+        let y =
+          this.hegiht -
+          this.padding.top -
+          this.padding.bottom -
+          (this.hegiht - this.padding.bottom - this.padding.top) *
+            ((value - this.minData) / (this.maxData - this.minData)) +
+          this.padding.top;
 
-          return `${x},${y}`;
-        });
+        yList.push(y);
+        pointList.push(`${x},${y}`);
       }
 
       // set color
-      // let customColor = data.customColor().border;
-      let borderCustomColor = '';
+      // let customColor = data.customColor().border;``
+      // Todo Change objectBoundingBox To userSpaceOnUse
       if (customColor) {
         let customColorElement = customColor().border;
         if (customColorElement) {
-          borderCustomColor = this.setCustomColor(customColorElement);
+          this.datas[i].borderCustomColorId = this.setCustomColor(
+            customColorElement,
+            {
+              x1: `${this.padding.left}`,
+              y1: `${Math.min(...yList)}`,
+              x2: `${this.padding.left}`,
+              y2: `${Math.max(...yList)}`,
+            },
+            'userSpaceOnUse'
+          );
         }
       }
 
@@ -551,12 +682,8 @@ class Chart {
         {
           property: 'stroke',
           value: (() => {
-            let color: string | undefined;
-            if (borderCustomColor !== '') {
-              color = `url('#${borderCustomColor}')`;
-            } else {
-              // eslint-disable-next-line no-self-assign
-              color = color;
+            if (this.datas[i].borderCustomColorId) {
+              color = `url('#${this.datas[i].borderCustomColorId}')`;
             }
             return color === undefined ? this.defaultColor : color;
           })(),
@@ -590,7 +717,6 @@ class Chart {
         {
           property: 'fill',
           value: (() => {
-            let color: string | undefined;
             if (lastPointCustomColor !== '') {
               color = `url('#${lastPointCustomColor}')`;
             } else {
@@ -625,7 +751,7 @@ class Chart {
               ]);
               radialGradientTag.appendChild(radialStop1);
               radialGradientTag.appendChild(radialStop2);
-              this.appendChilds(this.customColorDefs, [radialGradientTag]);
+              this.appendChilds(this.customColorContainer, [radialGradientTag]);
               color = `url('#${circleId}')`;
             }
             return color === undefined ? this.defaultColor : color;
@@ -635,56 +761,7 @@ class Chart {
 
       this.appendChilds(gTagOfPolyLine, [polyLine, lastPoint]);
     }
-
-    // 데이터의 영역 설정(커서 표시)
-    const Area = this.setArea({
-      x: this.padding.left + '',
-      y: this.padding.top + '',
-      width: this.width - this.padding.right - this.padding.left + '',
-      height: this.hegiht - this.padding.top - this.padding.bottom + '',
-    });
-
-    Area.style.cursor =
-      'url("https://www.bithumb.com/react/charting_library/sta…es/crosshair.6c091f7d5427d0c5e6d9dc3a90eb2b20.cur"),crosshair';
-    this.appendChilds(gTagOfPolyLine, [Area]);
-    this.appendToChart(gTagOfPolyLine);
-  };
-
-  /**
-   * Chart의 데이터 영역을 지정하는 함수
-   * 줌인 줌 아웃 등 여러 이벤트 영역에 필요한 범위를 설정함
-   * @param {x: string, y: string, width: string, hegiht: string} param
-   * @returns SVGElement
-   */
-  private setArea = ({
-    x,
-    y,
-    width,
-    height,
-  }: {
-    x: string;
-    y: string;
-    width: string;
-    height: string;
-  }) => {
-    const Area = this.createSvgElement('rect', [
-      { property: 'x', value: x },
-      { property: 'y', value: y },
-      {
-        property: 'width',
-        value: width,
-      },
-      {
-        property: 'height',
-        value: height,
-      },
-      {
-        property: 'fill-opacity',
-        value: '0',
-      },
-    ]);
-
-    return Area;
+    this.appendChilds(this.datasContainer, [gTagOfPolyLine]);
   };
 
   /**
@@ -715,7 +792,6 @@ class Chart {
       ]);
       text.append(data.label);
 
-      // let customColor = data.customColor?.(this.chart, this.svgNs);
       const bbox = this.getBBox(text);
       const textLength = bbox.width;
 
@@ -760,61 +836,271 @@ class Chart {
       ]);
       this.appendChilds(gTagOfLegend, [text, line]);
     }
-    this.appendToChart(gTagOfLegend);
+    this.appendChilds(this.legendContainer, [gTagOfLegend]);
   };
 
   /**
    * Chart의 Zoom 기능을 설정하는 함수
    */
-  private setZoomAction = () => {
-    this.chart.addEventListener('mousewheel', (e: any) => {
-      e.preventDefault();
-      // 데이터 범위 재조정
-      if (e.deltaY > 0) {
-        // Scroll Up
-        if (this.showDataCount < this.maxChartDataCount - 3)
-          this.showDataCount += 3;
-      } else {
-        // Scroll Down
-        if (this.showDataCount > 4) this.showDataCount -= 3;
+  private setZoomAction = (e: any) => {
+    e.preventDefault();
+    // 데이터 범위 재조정
+    if (e.deltaY > 0) {
+      // Scroll Up
+      if (this.showDataCount < this.maxChartDataCount - 3)
+        this.showDataCount += 3;
+    } else {
+      // Scroll Down
+      if (this.showDataCount > 4) this.showDataCount -= 3;
+    }
+
+    // 차트 데이터의 최대 최소 값 재설정
+    this.setMinMaxData();
+
+    // 차트 라벨 다시 그리기
+    document.getElementById('flowbit_label')?.remove();
+    this.setLabel();
+
+    // 재조정 된 데이터 다시 셋팅
+    document.getElementById('flowbit_datas')?.remove();
+    this.setPoints();
+  };
+
+  /**
+   * Chart의 Mouse Hover 기능을 설정하는 함수
+   * 마우스를 올린 지점에 데이터의 Info 창을 보여줌
+   */
+  private setMouseHoverAction = (e: any) => {
+    const rect = e.target.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const persent = mouseX / rect.width;
+    const index = Math.abs(Math.round((this.showDataCount - 1) * persent));
+    const dataValueList: {
+      cur: number;
+      prev: number;
+      legend: string;
+    }[] = [];
+
+    // 2. Draw Hover line Like Y Axios Guidline
+    const xPositionOfIndex =
+      (index / (this.showDataCount - 1)) *
+        (this.width - this.padding.left - this.padding.right) +
+      this.padding.left;
+    const yPositionOfGuidLine = `M ${xPositionOfIndex},${
+      this.padding.top
+    }L${xPositionOfIndex},${this.hegiht - this.padding.bottom}`;
+    this.hoverGuidLineContainer.setAttribute('d', yPositionOfGuidLine);
+    this.hoverGuidLineContainer.setAttribute('visibility', 'visible');
+
+    // 3. Point from data line
+    this.datas.forEach((_, i) => {
+      const { data, color, borderCustomColorId, label } = _;
+      const diff = this.maxChartDataCount - data.length;
+      const indexOfData = data.length - this.showDataCount + index + diff;
+      const dataOfIndex = data[indexOfData];
+      const hoverPoint = document.getElementById(`flowbit_hoverPoint${i}`);
+
+      // Todo 라이브러리 화를 고려하지 않고 특정 기능에만 작동되는 hover Card로 우선 개발됨
+      // 추후 커스텀화를 고려해 코드를 수정해야 함, 우선 여기서는 실제 가격이 먼저 나옴
+      dataValueList.push({
+        cur: dataOfIndex,
+        prev: data[indexOfData - 1],
+        legend: label,
+      });
+
+      this.hoverPointsContainer.setAttribute('visibility', 'visible');
+
+      // data가 전체 길이상에 존재하지 않을 경우에는 point를 생성하지 않음
+      if (dataOfIndex === undefined) {
+        hoverPoint?.setAttribute('cx', '0');
+        hoverPoint?.setAttribute('cy', '0');
+        return;
       }
 
-      // TODO 축을 새로 생성할 필요 없이 flowchart_data를 감싸는 또 다른 g태그를 만들자
+      // get yPosition Of Point
+      const yPositionOfIndex =
+        this.hegiht -
+        this.padding.top -
+        this.padding.bottom -
+        (this.hegiht - this.padding.bottom - this.padding.top) *
+          ((dataOfIndex - this.minData) / (this.maxData - this.minData)) +
+        this.padding.top;
 
-      // 차트 데이터의 최대 최소 값 재설정
-      this.setMinMaxData();
-
-      // 차트 라벨 다시 그리기
-      document.getElementById('flowbit_label')?.remove();
-      this.setLabel();
-
-      // 재조정 된 데이터 다시 셋팅
-      document.getElementById('flowbit_datas')?.remove();
-      this.setPoints();
-
-      // 데이터가 축 위로 올라오는 현상을 방지하기 위해 다시 셋팅
-      document.getElementById('flowbit_axios')?.remove();
-      this.setAxis();
+      // Set Point Property
+      hoverPoint?.setAttribute('cx', `${xPositionOfIndex}`);
+      hoverPoint?.setAttribute('cy', `${yPositionOfIndex}`);
+      hoverPoint?.setAttribute(
+        'stroke',
+        (() => {
+          return borderCustomColorId
+            ? `url(#${borderCustomColorId})`
+            : color
+            ? color
+            : this.defaultColor;
+        })()
+      );
     });
+
+    // 4. Pop info dialog for datas
+    // TODO 라이브러리 화를 고려하지 않고 특정 기능에만 작동되는 hover Card로 우선 개발됨
+    // 추후 커스텀화를 고려해 코드를 수정해야 함, 우선 여기서는 실제 가격이 먼저 나옴
+    if (dataValueList[0].cur === undefined) {
+      this.hoverCardContainer.remove();
+      return;
+    }
+
+    const actualData = dataValueList[0];
+    const predictedData = dataValueList[1];
+    const dataDiff =
+      predictedData.cur - actualData.cur > 0
+        ? `<span>예측 오차: <b class="green">+${(
+            predictedData.cur - actualData.cur
+          ).toLocaleString()} KRW</b></span>`
+        : `<span>예측 오차: <b class="red">${(
+            predictedData.cur - actualData.cur
+          ).toLocaleString()} KRW</b></span>`;
+    // const predictedDiff = predictedData.cur - predictedData.prev;
+    // const actualDiff = actualData.cur - actualData.prev;
+    // const isCorrect =
+    //   (predictedDiff > 0 && actualDiff > 0) ||
+    //   (predictedDiff < 0 && actualDiff < 0)
+    //     ? `<span>플로우빗 상승 추세 예측에 <b class="green">성공</b>했어요!</span>`
+    //     : `<span>플로우빗 상승 추세 예측에 <b class="red">실패</b>했어요!</span>`;
+    const isCorrect =
+      (actualData.prev - actualData.cur) *
+        (actualData.prev - predictedData.cur) >
+      0
+        ? `<span>플로우빗 상승 추세 예측에 <b class="green">성공</b>했어요!</span>`
+        : `<span>플로우빗 상승 추세 예측에 <b class="red">실패</b>했어요!</span>`;
+    const hoverCardString = `
+        <style>
+          .flowbit_card {
+            background: linear-gradient(
+              107deg,
+              rgba(250, 0, 255, 0.48) -36.41%,
+              rgba(72, 81, 155, 0.78) 75.37%
+            );
+            padding: 10px 15px;
+            border-radius: 8px;
+            visibility: hidden;
+            position: absolute;
+
+            font-size: 12px;
+            color: white;
+          }
+          .flowbit_card-contents {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+          .flowbit_card-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+          .flowbit_card-labels {
+            display: flex;
+            gap: 12px;
+          }
+          .flowbit_card-label {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+          }
+          .flowbit_card-label > span {
+            font-weight: 300;
+          }
+          .flowbit_card-label > strong {
+            font-weight: 700;
+          }
+          .flowbit_card-content > span {
+            font-weight: 400;
+          }
+          .flowbit_card-content b {
+            font-weight: 600;
+          }
+          .flowbit_card-content .green {
+            color: #00ff29;
+          }
+          .flowbit_card-content .red {
+            color: #f00;
+          }
+        </style>
+        <div class="flowbit_card-contents">
+          <div class="flowbit_card-content">
+            <div class="flowbit_card-labels">
+              <div class="flowbit_card-label">
+                <span>BTC 예측가격</span>
+                <strong>${predictedData.cur.toLocaleString()} KRW</strong>
+              </div>
+              <div class="flowbit_card-label">
+                <span>BTC 실제가격</span>
+                <strong>${actualData.cur.toLocaleString()} KRW</strong>
+              </div>
+            </div>
+          </div>
+          <div class="flowbit_card-content">
+          ${dataDiff}
+          ${isCorrect}
+          </div>
+        </div>
+    </div>
+      `;
+    this.hoverCardContainer.remove();
+    this.hoverCardContainer = this.stringToHTML(hoverCardString, {
+      classList: ['flowbit_card'],
+    });
+    this.getTarget()?.append(this.hoverCardContainer);
+
+    this.hoverCardContainer.style.visibility = 'visible';
+    this.hoverCardContainer.style.top = `${e.pageY + 10}px`;
+    if (persent > 0.5) {
+      this.hoverCardContainer.style.left = `${e.pageX - 10}px`;
+      this.hoverCardContainer.style.translate = '-100%';
+    } else {
+      this.hoverCardContainer.style.left = `${e.pageX + 10}px`;
+      this.hoverCardContainer.style.translate = '0';
+    }
   };
 
   /**
    * Chart의 Interaction 기능을 설정하는 함수
    */
   private setInteraction = () => {
-    if (this.zoom) this.setZoomAction();
+    // Make Interaction Area
+
+    // Set Scroll Event
+    // Zoom in, out 기능
+    if (this.zoom) {
+      this.mouseEventAreaContainer.addEventListener('mousewheel', (e) => {
+        this.setZoomAction(e);
+        this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
+        this.hoverPointsContainer.setAttribute('visibility', 'hidden');
+        this.hoverCardContainer.style.visibility = 'hidden';
+      });
+    }
+
+    // Set Mouse Hover Event
+    this.mouseEventAreaContainer.addEventListener(
+      'mousemove',
+      this.setMouseHoverAction
+    );
+    this.mouseEventAreaContainer.addEventListener('mouseleave', () => {
+      this.hoverGuidLineContainer.setAttribute('visibility', 'hidden');
+      this.hoverPointsContainer.setAttribute('visibility', 'hidden');
+      this.hoverCardContainer.style.visibility = 'hidden';
+    });
   };
 
   /**
    * Chart를 그리는 함수
    */
   public render = () => {
-    // 컨테이너 크기 및 Axios 구축
-    // Make SVG Container
-    this.setSVGElement();
-
-    // 1. Set Padding
+    // Set SVG Padding
     this.setSVGPadding();
+
+    // Set SVG Container
+    this.setSVGElement();
 
     // Draw X and Y Label
     this.setLabel();
