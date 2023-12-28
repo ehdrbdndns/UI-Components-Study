@@ -959,7 +959,13 @@ class Chart {
         : `<span>예측 오차: <b class="red">${(
             predictedData.cur - actualData.cur
           ).toLocaleString()} KRW</b></span>`;
-
+    // const predictedDiff = predictedData.cur - predictedData.prev;
+    // const actualDiff = actualData.cur - actualData.prev;
+    // const isCorrect =
+    //   (predictedDiff > 0 && actualDiff > 0) ||
+    //   (predictedDiff < 0 && actualDiff < 0)
+    //     ? `<span>플로우빗 상승 추세 예측에 <b class="green">성공</b>했어요!</span>`
+    //     : `<span>플로우빗 상승 추세 예측에 <b class="red">실패</b>했어요!</span>`;
     const isCorrect =
       (actualData.prev - actualData.cur) *
         (actualData.prev - predictedData.cur) >
